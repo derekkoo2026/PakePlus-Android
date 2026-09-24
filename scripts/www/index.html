@@ -1,0 +1,4133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<meta name="format-detection" content="telephone=no,email=no,address=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>上课管理</title>
+<style>
+:root{
+  --pri:#4f46e5;--pri-l:#6366f1;--bg:#f4f6fa;--card:#fff;--line:#e8ebf0;
+  --txt:#1f2937;--muted:#7b8494;--green:#10b981;--orange:#f59e0b;--red:#ef4444;
+  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;}
+html{-webkit-text-size-adjust:100%;-moz-text-size-adjust:100%;text-size-adjust:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:14px;color:var(--txt);background:var(--bg);
+  -webkit-user-select:none;user-select:none;overscroll-behavior:none;
+}
+input,textarea{-webkit-user-select:text;user-select:text;}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit;outline:none;}
+button{border:none;background:none;cursor:pointer;padding:0;}
+::-webkit-scrollbar{width:0;height:0;display:none;}
+*{scrollbar-width:none;}
+
+/* ===== 布局 ===== */
+#app{display:flex;flex-direction:column;height:100%;position:relative;}
+#topbar{
+  flex:0 0 auto;display:flex;align-items:center;gap:4px;
+  padding:var(--sat) 8px 0 8px;min-height:calc(52px + var(--sat));
+  background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;
+  position:relative;z-index:60;box-shadow:0 2px 10px rgba(79,70,229,.22);
+}
+.tb-btn{width:40px;height:40px;border-radius:10px;color:#fff;font-size:20px;line-height:1;
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.tb-btn:active{background:rgba(255,255,255,.18);}
+#pageTitle{flex:1 1 auto;font-size:17px;font-weight:600;text-align:center;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px;
+  display:flex;align-items:center;justify-content:center;gap:4px;color:#fff;}
+#pageTitle .tt-name{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#pageTitle .caret{font-size:11px;opacity:.8;}
+main{flex:1 1 auto;position:relative;overflow:hidden;}
+.page{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden;}
+.page.active{display:flex;}
+.scroll-area{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding-bottom:calc(20px + var(--sab));}
+
+/* ===== 抽屉 ===== */
+#mask{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:190;
+  opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;}
+#mask.open{opacity:1;visibility:visible;}
+#drawer{
+  position:fixed;left:0;top:0;bottom:0;width:252px;background:#fff;z-index:200;
+  transform:translateX(-100%);transition:transform .26s cubic-bezier(.4,0,.2,1);
+  box-shadow:3px 0 20px rgba(0,0,0,.14);display:flex;flex-direction:column;
+  padding-top:var(--sat);padding-bottom:var(--sab);
+}
+#drawer.open{transform:translateX(0);}
+.dr-head{padding:22px 18px 18px;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;}
+.dr-head h2{margin:0;font-size:18px;font-weight:600;letter-spacing:.5px;}
+.dr-head p{margin:6px 0 0;font-size:12px;opacity:.82;}
+.dr-list{padding:10px 10px;flex:1 1 auto;overflow-y:auto;}
+.dr-item{display:flex;align-items:center;gap:12px;width:100%;padding:13px 14px;
+  border-radius:11px;font-size:15px;color:#374151;text-align:left;margin-bottom:4px;}
+.dr-item .ico{font-size:17px;width:22px;text-align:center;}
+.dr-item.active{background:#eef0ff;color:var(--pri);font-weight:600;}
+.dr-item:active{background:#f1f3f9;}
+.dr-foot{padding:12px 18px 18px;font-size:11px;color:var(--muted);border-top:1px solid var(--line);}
+
+/* ===== 通用控件 ===== */
+.sel{appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:#fff;
+  border-radius:9px;padding:8px 30px 8px 12px;font-size:13.5px;color:var(--txt);
+  background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%237b8494' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;flex:1 1 auto;min-width:0;}
+.mini-btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 12px;
+  font-size:13px;color:var(--pri);font-weight:500;white-space:nowrap;}
+.mini-btn:active{background:#eef0ff;}
+.bak-ico{flex:0 0 auto;width:32px;height:32px;border:1px solid var(--line);background:#fff;
+  border-radius:9px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  padding:0;line-height:1;}
+.bak-ico:active{background:#eef0ff;transform:scale(.93);}
+.wide-btn{display:block;width:100%;padding:13px;border-radius:11px;font-size:15px;
+  background:#f3f4f8;color:#374151;margin-top:10px;font-weight:500;}
+.wide-btn.primary{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;}
+.wide-btn.danger{background:#fef2f2;color:var(--red);}
+.wide-btn.ghost{background:#fff;border:1px solid var(--line);}
+.wide-btn:active{opacity:.75;}
+.wide-btn:disabled{opacity:.4;}
+.btn-row{display:flex;gap:10px;}
+.btn-row .wide-btn{flex:1 1 0;}
+
+/* ===== 课表页 ===== */
+.sched-top{flex:0 0 auto;padding:8px 10px 6px;background:#fff;border-bottom:1px solid var(--line);}
+.sched-top .row2{display:flex;gap:8px;align-items:center;}
+.nav-btn{width:34px;height:32px;border-radius:9px;background:#f3f4f8;font-size:18px;
+  color:#4b5563;line-height:1;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.nav-btn:active{background:#e5e7f0;}
+.week-label{flex:1 1 auto;text-align:center;font-size:13.5px;font-weight:600;color:#374151;}
+.sched-head{flex:0 0 auto;display:grid;grid-template-columns:42px repeat(7,minmax(0,1fr));
+  background:#fbfcfe;border-bottom:1px solid var(--line);position:relative;z-index:10;}
+.hd-time{height:36px;}
+.hd-day{height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:10px;color:var(--muted);border-left:1px solid var(--line);line-height:1.25;
+  transition:background .2s;}
+.hd-day b{font-size:11px;font-weight:600;color:#374151;}
+.hd-day i{font-style:normal;font-size:9px;color:#9aa2b1;}
+.hd-day.today b{color:var(--pri);}
+.hd-day.today i{color:var(--pri);}
+.hd-day.highlight{background:#eef0ff;}
+.hd-day.highlight b,.hd-day.highlight i{color:var(--pri);font-weight:700;}
+.sched-scroll{
+  flex:1 1 auto;
+  overflow:hidden;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:0;
+  background:#fff;
+  position:relative;
+}
+.sched-body{position:relative;height:100%;}
+.srow{
+  display:grid;
+  grid-template-columns:42px repeat(7,minmax(0,1fr));
+  position:relative;
+}
+.tl{
+  font-size:9.5px;
+  color:#a2a9b6;
+  text-align:right;
+  padding-right:5px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:flex-end;
+  border-top:1px solid #f1f3f7;
+  line-height:1;
+  padding-top:1px;
+}
+.cell{
+  border-left:1px solid #f1f3f7;
+  border-top:1px solid #f1f3f7;
+  position:relative;
+  overflow:visible;
+  transition:background .2s;
+}
+.cell.highlight{background:#eef0ff;}
+.blk{
+  position:absolute;
+  z-index:50;
+  border-radius:5px;
+  border-left:3px solid var(--c,#6366f1);
+  background:#eef0ff;
+  color:#3730a3;
+  padding:1px 3px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  font-size:8px;
+  line-height:1.2;
+  touch-action:none;
+  transition:box-shadow .15s;
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
+}
+.blk .b-name{font-size:9.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.blk .b-sub{font-size:7.5px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.blk.st-done{background:#dcfce7;color:#166534;border-left-color:#22c55e;}
+.blk.st-leave{background:#fef3c7;color:#92400e;border-left-color:#f59e0b;}
+.blk.st-absent{background:#e5e7eb;color:#4b5563;border-left-color:#9ca3af;}
+.blk.st-done::after,.blk.st-leave::after,.blk.st-absent::after{
+  content:'';position:absolute;top:0;right:0;width:0;height:0;
+  border-top:8px solid rgba(0,0,0,.12);border-left:8px solid transparent;}
+.blk.drag-src{opacity:.28;z-index:40;}
+.drag-ghost{
+  opacity:.95 !important;
+  box-shadow:0 8px 22px rgba(30,41,59,.3) !important;
+  transform:scale(1.08) !important;
+  z-index:9999 !important;
+}
+body.dragging .sched-scroll{overflow:hidden !important;}
+.drag-tip{position:fixed;z-index:10000;background:rgba(17,24,39,.93);color:#fff;
+  font-size:12.5px;padding:7px 14px;border-radius:18px;pointer-events:none;
+  display:none;transform:translate(-50%,-160%);white-space:nowrap;
+  box-shadow:0 6px 18px rgba(0,0,0,.3);}
+
+/* ===== 学生页 ===== */
+.stu-toolbar{flex:0 0 auto;padding:10px 10px 6px;background:#fff;}
+.stu-toolbar input{width:100%;border:1px solid var(--line);border-radius:10px;
+  padding:10px 13px;font-size:14px;background:#f8f9fc;}
+.stu-toolbar input:focus{background:#fff;border-color:#c7cbf5;}
+.chips{display:flex;gap:7px;padding:0 10px 10px;background:#fff;
+  border-bottom:1px solid var(--line);overflow-x:auto;flex:0 0 auto;}
+.chip{padding:6px 14px;border-radius:16px;background:#f1f3f9;font-size:12.5px;
+  color:#5b6472;white-space:nowrap;flex:0 0 auto;}
+.chip.active{background:#eef0ff;color:var(--pri);font-weight:600;}
+.stu-filter-bar{display:flex;gap:6px;padding:8px 10px;background:#fff;
+  border-bottom:1px solid var(--line);align-items:center;}
+.stu-filter-bar .f-search{flex:1;min-width:0;padding:7px 9px;border:1px solid var(--line);
+  border-radius:8px;font-size:12.5px;background:#f7f8fc;}
+.stu-filter-bar .f-sel{padding:7px 6px;border:1px solid var(--line);border-radius:8px;
+  font-size:12px;background:#f7f8fc;color:#334155;max-width:90px;}
+.stu-filter-bar .f-btn{padding:7px 10px;border:1px solid var(--line);border-radius:8px;
+  font-size:12px;background:#f7f8fc;color:#334155;white-space:nowrap;}
+.stu-filter-bar .f-dir{padding:7px 8px;min-width:30px;text-align:center;font-size:13px;}
+.stu-list{padding:10px;}
+.stu-card{background:#fff;border-radius:13px;padding:13px 14px;margin-bottom:10px;
+  box-shadow:0 1px 4px rgba(30,41,59,.06);position:relative;overflow:hidden;}
+.stu-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,#6366f1);}
+.stu-card:active{background:#fafbff;}
+.stu-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+.stu-name{font-size:15.5px;font-weight:700;color:#1f2937;display:flex;align-items:center;gap:7px;}
+.stu-name .tag{font-size:10.5px;font-weight:500;background:#eef0ff;color:var(--pri);
+  padding:2px 8px;border-radius:9px;}
+.stu-remain{font-size:12px;font-weight:600;color:var(--pri);white-space:nowrap;}
+.stu-remain.warn{color:var(--red);}
+.stu-meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--muted);margin-bottom:8px;}
+.stu-meta b{color:#4b5563;font-weight:600;}
+.stu-stats{display:flex;gap:7px;flex-wrap:wrap;}
+.pill{font-size:10.5px;padding:3px 9px;border-radius:8px;background:#f3f4f8;color:#5b6472;}
+.pill.g{background:#dcfce7;color:#166534;}
+.pill.o{background:#fef3c7;color:#92400e;}
+.pill.r{background:#fee2e2;color:#991b1b;}
+.pill.b{background:#e0e7ff;color:#3730a3;}
+.empty{text-align:center;color:#a2a9b6;font-size:13px;padding:50px 20px;}
+
+/* ===== 统计页 ===== */
+.stats-top{flex:0 0 auto;padding:10px;background:#fff;border-bottom:1px solid var(--line);display:flex;gap:8px;}
+.stat-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 10px 0;}
+.stat-card{background:#fff;border-radius:13px;padding:14px;box-shadow:0 1px 4px rgba(30,41,59,.06);}
+.stat-card .lb{font-size:11.5px;color:var(--muted);margin-bottom:6px;}
+.stat-card .vl{font-size:20px;font-weight:700;color:#1f2937;line-height:1.1;}
+.stat-card .vl.g{color:var(--green);}
+.stat-card .vl.b{color:var(--pri);}
+.stat-card .sub{font-size:10.5px;color:#a2a9b6;margin-top:5px;}
+.panel{background:#fff;border-radius:13px;margin:12px 10px 0;padding:14px;
+  box-shadow:0 1px 4px rgba(30,41,59,.06);}
+.panel h3{margin:0 0 10px;font-size:13.5px;font-weight:700;color:#374151;
+  display:flex;align-items:center;gap:6px;}
+.alert-item{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 0;border-bottom:1px solid #f3f4f8;font-size:13px;}
+.alert-item:last-child{border-bottom:none;}
+.alert-item .nm{font-weight:600;color:#374151;}
+.alert-item .vl{font-size:12px;color:var(--red);font-weight:600;}
+.alert-item .vl.o{color:var(--orange);}
+.row-item{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px solid #f3f4f8;font-size:13px;}
+.row-item:last-child{border-bottom:none;}
+.row-item .l{display:flex;flex-direction:column;gap:2px;}
+.row-item .l b{font-weight:600;color:#374151;font-size:13.5px;}
+.row-item .l span{font-size:11px;color:var(--muted);}
+.row-item .r{text-align:right;}
+.row-item .r b{color:var(--pri);font-size:14px;}
+.row-item .r span{display:block;font-size:11px;color:var(--muted);}
+.stats-top .sel{flex:1;min-width:0;max-width:150px;}
+.stats-top .t-btn{padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:#f7f8fc;
+  font-size:12px;color:#334155;white-space:nowrap;}
+.stat-card.tap{cursor:pointer;}
+.stat-card.tap:active{background:#f5f6ff;}
+.d-nav{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.d-nav .d-title{flex:1;text-align:center;font-weight:700;font-size:14px;color:#1f2937;}
+.d-btn{border:1px solid var(--line);background:#f7f8fc;border-radius:8px;padding:5px 10px;
+  font-size:12px;color:#334155;white-space:nowrap;}
+.d-btn.d-mode{background:var(--pri);color:#fff;border-color:var(--pri);}
+.d-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;}
+.d-tile{background:#f7f8fc;border-radius:11px;padding:13px 8px;text-align:center;}
+.d-tile .tv{font-size:19px;font-weight:700;color:#1f2937;line-height:1.15;}
+.d-tile .tv.b{color:var(--pri);}
+.d-tile .tl{font-size:11px;color:var(--muted);margin-top:4px;}
+.d-tile .ts{font-size:10.5px;color:#a2a9b6;margin-top:2px;min-height:13px;}
+.chart{margin-top:14px;}
+.chart-title{font-size:11.5px;color:var(--muted);margin-bottom:8px;}
+.chart-bars{display:flex;align-items:flex-end;gap:4px;height:150px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  height:100%;min-width:0;}
+.bar-col .bar-val{font-size:9.5px;color:#6b7280;margin-bottom:3px;white-space:nowrap;max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;}
+.bar-col .bar{width:70%;max-width:20px;background:linear-gradient(180deg,#818cf8,#4f46e5);
+  border-radius:4px 4px 2px 2px;}
+.bar-col.zero .bar{background:#e5e7eb;width:40%;}
+.bar-col.cur .bar{background:linear-gradient(180deg,#fbbf24,#f59e0b);}
+.bar-col.cur .bar-lb{color:var(--pri);font-weight:700;}
+.bar-col .bar-lb{font-size:9.5px;color:#9aa2b1;margin-top:4px;}
+.no-alert{font-size:12.5px;color:#a2a9b6;padding:6px 0;}
+
+/* ===== 弹层 ===== */
+.modal-mask{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:300;
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;visibility:hidden;transition:opacity .22s,visibility .22s;}
+.modal-mask.open{opacity:1;visibility:visible;}
+.modal-mask.center{align-items:center;padding:16px;}
+.sheet{width:100%;max-width:540px;background:#fff;border-radius:18px 18px 0 0;
+  padding:18px 16px calc(18px + var(--sab));max-height:90vh;overflow-y:auto;
+  transform:translateY(24px);transition:transform .26s cubic-bezier(.4,0,.2,1);}
+.modal-mask.open .sheet{transform:translateY(0);}
+.modal-mask.center .sheet{border-radius:16px;transform:scale(.95);}
+.modal-mask.center.open .sheet{transform:scale(1);}
+.sheet-title{font-size:16.5px;font-weight:700;color:#1f2937;text-align:center;margin-bottom:4px;padding-right:30px;}
+.sheet-x{position:absolute;top:12px;right:12px;width:30px;height:30px;border:none;border-radius:50%;
+  background:#f3f4f8;color:#6b7280;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;padding:0;z-index:5;transition:all .15s;}
+.sheet-x svg{width:15px;height:15px;}
+.sheet-x:active{background:#e5e7eb;color:#1f2937;}
+.sheet{position:relative;}
+.sheet-sub{font-size:12.5px;color:var(--muted);text-align:center;margin-bottom:16px;}
+.attend-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:6px;}
+.attend-btn{padding:15px 4px;border-radius:12px;font-size:14px;font-weight:600;
+  background:#f3f4f8;color:#4b5563;border:2px solid transparent;}
+.attend-btn.done.on{background:#dcfce7;color:#166534;border-color:#86efac;}
+.attend-btn.leave.on{background:#fef3c7;color:#92400e;border-color:#fcd34d;}
+.attend-btn.absent.on{background:#e5e7eb;color:#4b5563;border-color:#9ca3af;}
+.attend-btn:active{opacity:.7;}
+.count-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.count-btn{padding:10px 4px;border-radius:10px;font-size:12.5px;font-weight:600;
+  background:#f3f4f8;color:#4b5563;border:2px solid transparent;cursor:pointer;}
+.count-btn.on{background:#eef2ff;color:#4f46e5;border-color:#4f46e5;}
+.count-btn:active{opacity:.7;}
+
+/* 表单 */
+.form-row{margin-bottom:13px;}
+.form-row label{display:block;font-size:12.5px;color:#5b6472;margin-bottom:6px;font-weight:500;}
+.form-row label .req{color:var(--red);margin-left:2px;}
+.form-row input[type=text],.form-row input[type=number],.form-row input[type=date],
+.form-row input[type=time],.form-row select,.form-row textarea{
+  width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;
+  font-size:14px;background:#f8f9fc;appearance:none;-webkit-appearance:none;}
+.form-row select{background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%237b8494' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;}
+.form-row textarea{min-height:70px;resize:vertical;}
+.form-row input.ro-input{background:#f1f3f9;color:#6b7280;cursor:default;
+  font-weight:700;font-size:15px;}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{
+  background:#fff;border-color:#a5b4fc;}
+.form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-sec{font-size:12px;font-weight:700;color:var(--pri);margin:18px 0 10px;
+  padding-left:9px;border-left:3px solid var(--pri);line-height:1;}
+.detail-line{display:flex;justify-content:space-between;padding:9px 0;
+  border-bottom:1px solid #f3f4f8;font-size:13px;}
+.detail-line:last-child{border-bottom:none;}
+.detail-line .k{color:var(--muted);}
+.detail-line .v{color:#374151;font-weight:500;text-align:right;max-width:62%;word-break:break-all;}
+
+/* 课表选择弹层 */
+.tt-list{max-height:52vh;overflow-y:auto;margin-bottom:8px;}
+.tt-opt{display:flex;align-items:center;justify-content:space-between;
+  padding:13px 12px;border-radius:11px;font-size:14.5px;color:#374151;
+  border:1px solid transparent;margin-bottom:6px;background:#f8f9fc;}
+.tt-opt:active{background:#eef0ff;}
+.tt-opt.cur{background:#eef0ff;color:var(--pri);font-weight:600;border-color:#c7cbf5;}
+.tt-opt .tt-sub{font-size:11px;color:var(--muted);font-weight:400;}
+.tt-opt .tt-check{color:var(--pri);font-weight:700;}
+
+/* 导出 */
+.seg{display:flex;background:#f1f3f9;border-radius:11px;padding:3px;gap:3px;margin-bottom:13px;}
+.seg button{flex:1 1 0;padding:9px 4px;border-radius:9px;font-size:13px;color:#5b6472;font-weight:500;}
+.seg button.on{background:#fff;color:var(--pri);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.date-row{display:flex;align-items:center;gap:8px;margin-bottom:13px;}
+.date-row input{flex:1 1 0;min-width:0;border:1px solid var(--line);border-radius:10px;
+  padding:10px;font-size:13px;background:#f8f9fc;appearance:none;-webkit-appearance:none;}
+.date-row span{color:var(--muted);font-size:12px;flex:0 0 auto;}
+.preview{background:#f8f9fc;border:1px solid var(--line);border-radius:11px;
+  padding:12px;font-size:11.5px;line-height:1.75;white-space:pre-wrap;word-break:break-all;
+  max-height:240px;overflow-y:auto;font-family:ui-monospace,Menlo,Consolas,monospace;
+  color:#374151;margin-bottom:6px;user-select:text;-webkit-user-select:text;}
+.preview img{width:100%;display:block;border-radius:8px;}
+
+/* Toast */
+#toast{position:fixed;left:50%;bottom:calc(80px + var(--sab));transform:translateX(-50%) translateY(14px);
+  background:rgba(17,24,39,.93);color:#fff;font-size:13.5px;padding:11px 20px;border-radius:22px;
+  z-index:9999;opacity:0;visibility:hidden;transition:.25s;max-width:82vw;text-align:center;
+  pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.28);line-height:1.5;}
+#toast.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);}
+
+/* ===== 注册激活屏 ===== */
+#regScreen{position:fixed;inset:0;z-index:500;background:linear-gradient(150deg,#312e81,#4f46e5);
+  display:none;align-items:center;justify-content:center;padding:18px;overflow-y:auto;}
+#regScreen.open{display:flex;}
+.reg-card{width:100%;max-width:380px;background:#fff;border-radius:18px;padding:26px 22px 20px;
+  box-shadow:0 18px 50px rgba(0,0,0,.35);text-align:center;}
+.reg-logo{width:52px;height:52px;border-radius:15px;background:linear-gradient(135deg,#4f46e5,#6366f1);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#fff;font-size:24px;}
+.reg-card h2{margin:0;font-size:18px;font-weight:700;color:#1f2937;}
+.reg-sub{margin:6px 0 18px;font-size:12.5px;color:#6b7280;line-height:1.6;}
+.reg-field{margin-bottom:13px;text-align:left;}
+.reg-field label{display:flex;justify-content:space-between;align-items:center;
+  font-size:12.5px;color:#4b5563;margin-bottom:6px;font-weight:500;}
+.reg-st{font-size:11px;font-weight:400;transition:color .2s;}
+.reg-st.loading{color:#4f46e5;}
+.reg-st.ok{color:#10b981;}
+.reg-st.err{color:#ef4444;}
+.reg-code-row{display:flex;gap:6px;align-items:stretch;}
+.reg-code-row input{flex:1;min-width:0;padding:11px 4px;border:1px solid #e5e7eb;
+  border-radius:10px;font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace;
+  letter-spacing:0;background:#f9fafb;color:#374151;text-align:center;outline:none;}
+.reg-code-row input:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.12);}
+.reg-ico-btn{flex:0 0 auto;width:42px;height:42px;border:none;border-radius:10px;
+  background:#4f46e5;color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;transition:all .15s;padding:0;}
+.reg-ico-btn:active{transform:scale(.93);}
+.reg-ico-btn.refresh{background:#6366f1;}
+.reg-ico-btn svg{width:16px;height:16px;}
+.reg-input{width:100%;padding:11px 13px;border:1px solid #e5e7eb;border-radius:10px;
+  font-size:14px;text-align:center;letter-spacing:1px;outline:none;background:#fff;color:#1f2937;}
+.reg-input:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.12);}
+.reg-input::placeholder{color:#9ca3af;letter-spacing:.5px;}
+.reg-retry{margin-top:8px;padding:9px 11px;background:#fef2f2;border:1px solid #fecaca;
+  border-radius:9px;display:none;align-items:center;justify-content:space-between;gap:10px;}
+.reg-retry.show{display:flex;}
+.reg-retry .txt{font-size:11.5px;color:#ef4444;flex:1;line-height:1.5;}
+.reg-retry button{padding:6px 12px;border:none;border-radius:7px;background:#ef4444;color:#fff;
+  font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.reg-tip{font-size:11px;color:#9ca3af;margin-top:6px;line-height:1.5;}
+.reg-msg{font-size:12.5px;min-height:18px;margin-top:10px;font-weight:500;}
+.reg-msg.err{color:#ef4444;}
+.reg-msg.ok{color:#10b981;}
+.reg-submit{width:100%;padding:12px;border:none;border-radius:11px;
+  background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;font-size:15px;font-weight:600;
+  cursor:pointer;margin-top:4px;letter-spacing:3px;box-shadow:0 8px 18px -8px rgba(79,70,229,.6);}
+.reg-submit:active{transform:scale(.98);filter:brightness(.95);}
+.reg-dev-card{margin-top:16px;padding:12px 14px;background:linear-gradient(135deg,#eef2ff,#f5f3ff);
+  border:1px solid #e0e7ff;border-radius:13px;position:relative;overflow:hidden;text-align:left;}
+.reg-dev-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#4b5563;margin-bottom:7px;white-space:nowrap;}
+.reg-dev-row:last-child{margin-bottom:0;}
+.reg-dev-row .lbl{color:#9ca3af;font-size:11.5px;flex:0 0 auto;white-space:nowrap;}
+.reg-dev-row b{color:#1f2937;font-weight:700;font-size:13px;}
+.reg-dev-tel{width:100%;display:flex;align-items:center;justify-content:space-between;background:#fff;
+  border:1px dashed #c7d2fe;border-radius:9px;padding:9px 12px;cursor:pointer;transition:all .15s;
+  margin-bottom:7px;white-space:nowrap;}
+.reg-dev-tel:active{background:#eef2ff;border-color:#4f46e5;}
+.reg-dev-tel .lbl{color:#9ca3af;font-size:11.5px;flex:0 0 auto;white-space:nowrap;}
+.reg-dev-tel .tel{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;font-weight:700;
+  letter-spacing:.5px;color:#1f2937;white-space:nowrap;}
+.reg-dev-tel .cp-hint{font-size:10.5px;color:#9ca3af;margin-left:6px;font-weight:400;white-space:nowrap;}
+.reg-warn{margin-top:8px;padding:7px 11px;background:#fef2f2;border:1px solid #fecaca;
+  border-radius:8px;font-size:11.5px;color:#ef4444;text-align:center;font-weight:700;letter-spacing:.5px;}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header id="topbar">
+    <button class="tb-btn" id="btnMenu" aria-label="菜单">☰</button>
+    <h1 id="pageTitle"><span class="tt-name">我的课表</span><span class="caret">▾</span></h1>
+    <button class="tb-btn" id="btnAction" aria-label="操作">＋</button>
+  </header>
+
+  <main>
+    <!-- 课表页 -->
+    <section id="page-schedule" class="page active">
+      <div class="sched-top">
+        <div class="row2">
+          <button class="nav-btn" id="btnPrevWeek">‹</button>
+          <div class="week-label" id="weekLabel">—</div>
+          <button class="nav-btn" id="btnNextWeek">›</button>
+          <button class="mini-btn" id="btnToday">今日</button>
+        </div>
+      </div>
+      <div class="sched-head" id="schedHead"></div>
+      <div class="sched-scroll" id="schedScroll">
+        <div class="sched-body" id="schedBody"></div>
+      </div>
+    </section>
+
+    <!-- 学生页 -->
+    <section id="page-students" class="page">
+      <div class="stu-filter-bar">
+        <input id="stuSearch" type="text" placeholder="搜索" class="f-search"/>
+        <select id="stuTtFilter" class="f-sel">
+          <option value="all">全部课表</option>
+        </select>
+        <select id="stuStatus" class="f-sel">
+          <option value="all">全部状态</option>
+          <option value="active">在学</option>
+          <option value="completed">已结课</option>
+          <option value="已上课">上课</option>
+          <option value="请假">请假</option>
+          <option value="旷课">旷课</option>
+        </select>
+        <button id="stuSortBtn" class="f-btn">排序 ▾</button>
+        <button id="stuSortDirBtn" class="f-btn f-dir" title="切换正序/倒序">↓</button>
+      </div>
+      <div class="scroll-area" id="stuList"></div>
+    </section>
+
+    <!-- 统计页 -->
+    <section id="page-stats" class="page">
+      <div class="stats-top">
+        <select id="statsTtSel" class="sel"></select>
+        <button class="t-btn" id="btnExport">📤 导出</button>
+      </div>
+      <div class="scroll-area">
+        <div class="stat-cards" id="statCards"></div>
+        <div class="panel" id="statDetail" style="margin-top:12px;"></div>
+      </div>
+    </section>
+
+    <!-- 设置页 -->
+    <section id="page-settings" class="page">
+      <div class="scroll-area" style="padding:12px 10px;">
+        <div class="panel" style="margin:0 0 12px;">
+          <h3>📦 数据管理</h3>
+          <button class="wide-btn primary" id="setBackup">备份管理</button>
+          <button class="wide-btn ghost" id="setRestoreData">恢复数据</button>
+          <button class="wide-btn danger" id="setReset">清空全部数据</button>
+          <button class="wide-btn danger" id="setUnlic">解除授权</button>
+        </div>
+        <div class="panel" style="margin:0;">
+          <h3>ℹ️ 关于</h3>
+          <div style="font-size:12.5px;color:#5b6472;line-height:1.9;">
+            <div style="padding-bottom:10px;">
+              <p style="margin:0 0 4px;"><b>软件设计 / 开发：</b>瑞克校长</p>
+              <p style="margin:0 0 4px;"><b>手机 / 微信：</b><span id="aboutPhone" style="color:#4f46e5;cursor:pointer;text-decoration:underline;">13810054281</span> <span style="color:#9ca3af;font-size:11px;">（点击复制）</span></p>
+            </div>
+            <div id="aboutLic" style="border-top:1px solid #eef0f5;padding:10px 0;">
+              <p style="margin:0 0 4px;"><b>授权状态：</b><span id="licStatus">检测中…</span></p>
+              <p style="margin:0 0 4px;"><b>注册时间：</b><span id="licRegDate">—</span></p>
+              <p style="margin:0;"><b>设备码：</b><span id="licDevCode" style="font-family:monospace;font-size:11px;">—</span></p>
+            </div>
+            <div style="border-top:1px solid #eef0f5;padding:10px 0;">
+              <p style="margin:0 0 4px;">本软件为音乐培训教师专用教务管理工具，所有数据仅保存在本机，<b style="color:#ef4444;">不上传任何服务器</b>。</p>
+              <p style="margin:0;">⚠️ 卸载/清缓存/换机会丢失数据，请定期备份。</p>
+            </div>
+            <p style="margin:10px 0 0;text-align:center;color:#9ca3af;border-top:1px solid #eef0f5;padding-top:10px;">版本 v4.9 · 单文件离线版</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 报名结课页 -->
+    <section id="page-enroll" class="page">
+      <div class="stu-toolbar">
+        <input id="enrollSearch" type="text" placeholder="搜索姓名 / 科目 / 课表"/>
+      </div>
+      <div class="chips" id="enrollChips">
+        <button class="chip active" data-f="all">全部</button>
+        <button class="chip" data-f="active">在学</button>
+        <button class="chip" data-f="done">已结课</button>
+      </div>
+      <div class="scroll-area" id="enrollList"></div>
+    </section>
+
+    <!-- 回收站页 -->
+    <section id="page-recycle" class="page">
+      <div class="scroll-area" style="padding:12px 10px;">
+        <div class="panel" style="margin:0;">
+          <h3>🗑️ 回收站</h3>
+          <p style="font-size:12px;color:#6b7280;margin:6px 0 12px;">已删除的学员会保留在回收站，可恢复或彻底删除。</p>
+          <div id="recycleList"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="mask"></div>
+<aside id="drawer">
+  <div class="dr-head">
+    <h2>上课管理</h2>
+    <p>音乐培训 · 教务助手</p>
+  </div>
+  <div class="dr-list">
+    <button class="dr-item active" data-page="schedule"><span class="ico">📅</span>上课课表</button>
+    <button class="dr-item" data-page="students"><span class="ico">👥</span>学生管理</button>
+    <button class="dr-item" data-page="enroll"><span class="ico">📝</span>报名结课</button>
+    <button class="dr-item" data-page="stats"><span class="ico">📊</span>课时统计</button>
+    <button class="dr-item" data-page="recycle"><span class="ico">🗑️</span>回收站</button>
+    <button class="dr-item" data-page="settings"><span class="ico">⚙️</span>设置</button>
+  </div>
+  <div class="dr-foot">数据仅保存在本机 · 请定期备份</div>
+</aside>
+
+<div class="drag-tip" id="dragTip"></div>
+<div id="toast"></div>
+
+<div id="regScreen">
+  <div class="reg-card">
+    <div class="reg-logo">📅</div>
+    <h2>软件激活</h2>
+    <p class="reg-sub">本机一机一码 · 离线激活<br>复制设备码发给开发者获取注册码</p>
+    <div class="reg-field">
+      <label><span>设备码（本机唯一）</span><span class="reg-st" id="regDevStatus"></span></label>
+      <div class="reg-code-row">
+        <input id="regDevCode" type="text" readonly value="点击 ⟳ 获取">
+        <button class="reg-ico-btn refresh" id="regRefresh" title="重新获取设备码">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+        </button>
+        <button class="reg-ico-btn" id="regCopy" title="复制设备码">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+      <div class="reg-retry" id="regRetryBar"><span class="txt" id="regRetryText">设备码获取失败，请重试</span><button id="regRetryBtn">重新获取</button></div>
+      <div class="reg-tip" id="regDevTip">若复制按钮无效，请长按设备码选择「复制」</div>
+    </div>
+    <div class="reg-field">
+      <label><span>注册码</span></label>
+      <input id="regUserCode" class="reg-input" type="text" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="reg-msg" id="regMsg"></div>
+    <button class="reg-submit" id="regSubmit">激 活</button>
+    <div class="reg-dev-card">
+      <div class="reg-dev-row"><span class="lbl">软件开发</span><b>瑞克校长</b></div>
+      <button type="button" class="reg-dev-tel" id="regTel"><span class="lbl">手机 / 微信</span><span class="tel">13810054281<span class="cp-hint">点击复制</span></span></button>
+      <div class="reg-warn">盗版必究 · 仅供本人使用</div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================
+   0. 基础工具
+   ========================================================= */
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
+const pad2 = n => String(n).padStart(2, '0');
+const uid = () => 'id' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+function ymd(d){ return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
+function parseYmd(s){
+  if(!s) return new Date(NaN);
+  const m = String(s).match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  if(m) return new Date(+m[1], +m[2]-1, +m[3]);
+  const d = new Date(s);
+  return isNaN(d) ? new Date(NaN) : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+function addDays(d, n){ const x = new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+function addMonths(d, n){
+  const x = new Date(d.getTime()); const day = x.getDate();
+  x.setMonth(x.getMonth()+n);
+  if(x.getDate() < day) x.setDate(0);
+  return x;
+}
+function mondayOf(d){
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const w = (x.getDay() + 6) % 7;
+  x.setDate(x.getDate() - w);
+  return x;
+}
+function weekdayOf(d){ return ((d.getDay() + 6) % 7) + 1; }
+
+function normalizeTime(t){
+  if(t == null || t === '') return '09:00';
+  let s = String(t).trim();
+  let m = s.match(/^(\d{1,2})\s*[:：.时]\s*(\d{1,2})/);
+  if(m){
+    let h = clamp(parseInt(m[1],10) || 0, 0, 23);
+    let mi = clamp(parseInt(m[2],10) || 0, 0, 59);
+    return pad2(h) + ':' + pad2(mi);
+  }
+  m = s.match(/^(\d{1,2})$/);
+  if(m) return pad2(clamp(parseInt(m[1],10),0,23)) + ':00';
+  m = s.match(/(\d{1,2})/);
+  if(m) return pad2(clamp(parseInt(m[1],10),0,23)) + ':00';
+  return '09:00';
+}
+function normalizeDay(d){
+  let n = parseInt(d, 10);
+  if(isNaN(n)) return 1;
+  n = ((n - 1) % 7 + 7) % 7 + 1;
+  return n;
+}
+function normalizeDate(v){
+  if(!v) return '';
+  if(v instanceof Date) return isNaN(v) ? '' : ymd(v);
+  const s = String(v).trim();
+  const m = s.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  if(m) return m[1] + '-' + pad2(+m[2]) + '-' + pad2(+m[3]);
+  const d = new Date(s);
+  return isNaN(d) ? '' : ymd(d);
+}
+function hourOf(t){
+  const m = String(t || '').match(/^(\d{1,2})/);
+  return m ? clamp(parseInt(m[1],10), 0, 23) : 9;
+}
+function minuteOf(t){
+  const m = String(t || '').match(/^\d{1,2}[:：](\d{1,2})/);
+  return m ? clamp(parseInt(m[1],10), 0, 59) : 0;
+}
+function timeToMin(t){
+  return hourOf(t) * 60 + minuteOf(t);
+}
+function fmtDateCN(ds){
+  const d = parseYmd(ds);
+  if(isNaN(d)) return String(ds || '');
+  return d.getFullYear() + '年' + pad2(d.getMonth()+1) + '月' + pad2(d.getDate()) + '日 周' + WEEK_CN[(d.getDay()+6)%7];
+}
+
+/* =========================================================
+   1. 常量
+   ========================================================= */
+const STORE_KEY = 'music_teacher_app_v4';
+const OLD_KEYS  = ['music_teacher_app_v3','music_teacher_app_v2','music_teacher_app_v1','music_teacher_app'];
+const SUBJECTS  = ['尤克里里','吉他','萨克斯','口琴','架子鼓','自定义'];
+const PAY_METHODS = ['微信','银行卡','支付宝','现金','自定义'];
+const WEEK_CN   = ['一','二','三','四','五','六','日'];
+const WEEK_FULL = ['周一','周二','周三','周四','周五','周六','周日'];
+const PALETTE   = ['#6366f1','#10b981','#f59e0b','#8b5cf6','#ec4899','#0ea5e9','#f97316','#14b8a6','#a855f7','#ef4444'];
+
+const FEE_PRESETS = [
+  { label:'¥300 / 45分钟', fee:300, dur:45 },
+  { label:'¥400 / 45分钟', fee:400, dur:45 },
+  { label:'¥500 / 45分钟', fee:500, dur:45 }
+];
+
+const START_HOUR = 8;
+const END_HOUR = 22;
+
+/* =========================================================
+   2. 数据层
+   ========================================================= */
+let DB = null;
+let currentTtId = null;
+let currentWeek = null;
+let statsTtId = null;
+let stuFilter = 'all';
+let stuSortBy = 'latest';
+let stuSortDir = 'desc'; // asc=正序(升序), desc=倒序(降序)
+const STU_SORT_OPTS = [
+  {v:'latest', label:'最新报名'},
+  {v:'remain', label:'剩余课时'},
+  {v:'expire', label:'有效期'},
+  {v:'done', label:'上课次数'},
+  {v:'leave', label:'请假次数'},
+  {v:'absent', label:'旷课次数'}
+];
+let enrollFilter = 'all';
+let activePage = 'schedule';
+
+function defaultData(){
+  /* 空白初始数据：不内置任何示例学员，首次安装即为空表，备份体积最小 */
+  return {
+    version: 4,
+    timetables: [{ id: 'tt_default', name: '我的课表', isDefault: true }],
+    students: [],
+    lessons: []
+  };
+}
+
+function migrate(d){
+  if(!d || typeof d !== 'object') return defaultData();
+  if(!Array.isArray(d.timetables) || !d.timetables.length){
+    d.timetables = [{ id:'tt_default', name:'我的课表', isDefault:true }];
+  }
+  d.timetables.forEach((t,i)=>{
+    t.id = t.id || ('tt_' + i + '_' + Date.now().toString(36));
+    t.name = t.name || ('课表' + (i+1));
+    t.isDefault = !!t.isDefault;
+  });
+  if(!d.timetables.some(t=>t.isDefault)) d.timetables[0].isDefault = true;
+  const defId = (d.timetables.find(t=>t.isDefault) || d.timetables[0]).id;
+  const ttIds = d.timetables.map(t=>t.id);
+
+  if(!Array.isArray(d.students)) d.students = [];
+  d.students.forEach(s=>{
+    s.id = s.id || uid();
+    s.name = String(s.name || s['姓名'] || '未命名').trim() || '未命名';
+    s.subject = s.subject || s['科目'] || '尤克里里';
+    s.day = normalizeDay(s.day != null ? s.day : (s.week != null ? s.week : 1));
+    s.time = normalizeTime(s.time || s['上课时间']);
+    s.duration = parseInt(s.duration || s['时长'], 10) || 45;
+    s.fee = Number(s.fee != null ? s.fee : (s['单价'] || 0)) || 0;
+    s.feeStd = s.feeStd || '';
+    s.discount = Number(s.discount || 0) || 0;
+    s.payAmount = Number(s.payAmount || 0) || 0;
+    s.payTimes = Number(s.payTimes || 1) || 1;
+    s.payDate = normalizeDate(s.payDate) || ymd(new Date());
+    s.payMethod = s.payMethod || '微信';
+    s.totalLessons = Number(s.totalLessons || s['已购课时'] || 0) || 0;
+    s.validMonths = Number(s.validMonths || s['有效期'] || 3) || 3;
+    s.startDate = normalizeDate(s.startDate || s['报名日期']) || ymd(new Date());
+    s.note = s.note || '';
+    s.teacher = s.teacher || '';
+    s.deleted = !!s.deleted;
+    s.deletedAt = s.deletedAt || '';
+    s.completed = !!s.completed;
+    s.completedAt = s.completedAt || '';
+    s.completeNote = s.completeNote || '';
+    s.completeServiceFee = Number(s.completeServiceFee) || 0;
+    s.completeRefund = Number(s.completeRefund) || 0;
+    /* 图片功能已移除：剥离历史数据中的图片字段，释放 localStorage 空间 */
+    s.completeImage = undefined;
+    s.receiptImage = undefined;
+    s.attendanceImages = undefined;
+    if(!s.timetableId || ttIds.indexOf(s.timetableId) < 0) s.timetableId = defId;
+  });
+
+  if(!Array.isArray(d.lessons)) d.lessons = [];
+  d.lessons.forEach(l=>{
+    l.id = l.id || uid();
+    l.studentId = l.studentId || l.student;
+    l.date = normalizeDate(l.date);
+    l.status = l.status || '未标记';
+    l.fee = Number(l.fee || 0) || 0;
+    l.count = Number(l.count) || 1;
+    if(l.date) l.week = ymd(mondayOf(parseYmd(l.date)));
+  });
+  d.lessons = d.lessons.filter(l => l.studentId && l.date && d.students.some(s=>s.id === l.studentId));
+  d.lessons.forEach(l=>{
+    const s = d.students.find(x=>x.id === l.studentId);
+    if(!l.timetableId) l.timetableId = s ? s.timetableId : defId;
+  });
+
+  d.version = 4;
+  return d;
+}
+
+function loadDB(){
+  let raw = null;
+  try { raw = localStorage.getItem(STORE_KEY); } catch(e){}
+  if(!raw){
+    for(let i = 0; i < OLD_KEYS.length; i++){
+      try { raw = localStorage.getItem(OLD_KEYS[i]); } catch(e){}
+      if(raw) break;
+    }
+  }
+  if(!raw){
+    DB = defaultData();
+  } else {
+    try { DB = migrate(JSON.parse(raw)); }
+    catch(e){ DB = defaultData(); }
+  }
+  save();
+}
+
+function save(){
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(DB)); }
+  catch(e){ toast('存储空间不足，保存失败'); }
+}
+
+function activeStudents(){ return DB.students.filter(s => !s.deleted); }
+function deletedStudents(){ return DB.students.filter(s => s.deleted); }
+
+/* =========================================================
+   3. 通用 UI
+   ========================================================= */
+let toastTimer = null;
+function toast(msg){
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2000);
+}
+
+function openDrawer(){
+  $('#drawer').classList.add('open');
+  $('#mask').classList.add('open');
+}
+function closeDrawer(){
+  $('#drawer').classList.remove('open');
+  $('#mask').classList.remove('open');
+}
+
+function showSheet(html, onAction, opts){
+  opts = opts || {};
+  const mask = document.createElement('div');
+  mask.className = 'modal-mask' + (opts.center ? ' center' : '');
+  mask.innerHTML = html;
+  document.body.appendChild(mask);
+  requestAnimationFrame(()=>mask.classList.add('open'));
+
+  let closed = false;
+  function close(){
+    if(closed) return; closed = true;
+    mask.classList.remove('open');
+    setTimeout(()=>{ if(mask.parentNode) mask.parentNode.removeChild(mask); }, 260);
+  }
+  // 给 sheet 注入右上角关闭 X
+  const sheetEl = mask.querySelector('.sheet');
+  if(sheetEl){
+    const x = document.createElement('button');
+    x.className = 'sheet-x';
+    x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    x.onclick = close;
+    sheetEl.appendChild(x);
+  }
+  mask.addEventListener('click', function(e){
+    if(e.target === mask){ close(); return; }
+    if(e.target.closest('.sheet-x')){ return; }
+    const btn = e.target.closest('[data-st],[data-act],[data-idx],[data-tt]');
+    if(!btn) return;
+    if(onAction){
+      onAction({
+        type: btn.dataset.st ? 'status' : (btn.dataset.tt ? 'tt' : btn.dataset.act),
+        value: btn.dataset.st || btn.dataset.tt || btn.dataset.act,
+        idx: btn.dataset.idx,
+        el: btn,
+        close: close
+      });
+    }
+  });
+  return { close: close, el: mask };
+}
+
+function confirmBox(title, msg, okText, cb){
+  showSheet(
+    '<div class="sheet">' +
+      '<div class="sheet-title">' + esc(title) + '</div>' +
+      '<div class="sheet-sub" style="margin-bottom:18px;">' + msg + '</div>' +
+      '<button class="wide-btn danger" data-act="ok">' + esc(okText || '确定') + '</button>' +
+      '<button class="wide-btn ghost" data-act="cancel">取消</button>' +
+    '</div>',
+    function(a){
+      a.close();
+      if(a.value === 'ok' && cb) setTimeout(cb, 120);
+    }
+  );
+}
+
+/* =========================================================
+   4. 课表渲染
+   ========================================================= */
+function getStudentsOfTt(ttId){
+  return activeStudents().filter(s => s.timetableId === ttId && !s.completed);
+}
+function colorOf(id){
+  let h = 0;
+  const s = String(id);
+  for(let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+
+function updateTitle(){
+  const t = DB.timetables.find(x => x.id === currentTtId);
+  const nameEl = $('#pageTitle .tt-name');
+  if(nameEl) nameEl.textContent = t ? t.name : '我的课表';
+}
+
+function renderWeekLabel(){
+  const mon = currentWeek;
+  const sun = addDays(mon, 6);
+  const sameYear = mon.getFullYear() === sun.getFullYear();
+  let txt = mon.getFullYear() + '年' + pad2(mon.getMonth()+1) + '月' + pad2(mon.getDate()) + '日';
+  txt += ' - ';
+  if(!sameYear) txt += sun.getFullYear() + '年';
+  txt += pad2(sun.getMonth()+1) + '月' + pad2(sun.getDate()) + '日';
+  $('#weekLabel').textContent = txt;
+}
+
+function renderHead(){
+  const todayStr = ymd(new Date());
+  const thisMonday = mondayOf(new Date());
+  const isCurrentWeek = ymd(currentWeek) === ymd(thisMonday);
+
+  let h = '<div class="hd-time"></div>';
+  for(let i = 0; i < 7; i++){
+    const d = addDays(currentWeek, i);
+    const isToday = isCurrentWeek && (ymd(d) === todayStr);
+    h += '<div class="hd-day' + (isToday ? ' today' : '') + '" data-d="' + (i+1) + '">' +
+           '<b>周' + WEEK_CN[i] + '</b>' +
+           '<i>' + pad2(d.getMonth()+1) + '/' + pad2(d.getDate()) + '</i>' +
+         '</div>';
+  }
+  $('#schedHead').innerHTML = h;
+}
+
+function blockHTMLWithPos(s, weekKey, d, topPx, heightPx){
+  const dateStr = ymd(addDays(parseYmd(weekKey), d - 1));
+  const lesson = DB.lessons.find(l => l.studentId === s.id && l.date === dateStr);
+  const st = lesson ? lesson.status : '';
+  let cls = '';
+  if(st === '已上课') cls = ' st-done';
+  else if(st === '请假') cls = ' st-leave';
+  else if(st === '旷课') cls = ' st-absent';
+
+  return '<div class="blk' + cls + '" data-sid="' + s.id + '" data-date="' + dateStr + '" ' +
+         'style="--c:' + colorOf(s.id) + ';left:1px;right:1px;' +
+         'top:' + topPx.toFixed(1) + 'px;height:' + heightPx.toFixed(1) + 'px;">' +
+           '<span class="b-name">' + esc(s.name) + '</span>' +
+           '<span class="b-sub">' + esc(s.time) + ' ' + esc(s.subject) + '</span>' +
+         '</div>';
+}
+
+function renderSchedule(){
+  updateTitle();
+  renderWeekLabel();
+  renderHead();
+
+  const weekKey = ymd(currentWeek);
+  const students = getStudentsOfTt(currentTtId);
+
+  const thisMonday = mondayOf(new Date());
+  const isCurrentWeek = ymd(currentWeek) === ymd(thisMonday);
+  const todayIdx = isCurrentWeek ? weekdayOf(new Date()) : 0;
+
+  const byDay = {};
+  students.forEach(s=>{
+    const k = s.day;
+    (byDay[k] = byDay[k] || []).push(s);
+  });
+
+  const scrollEl = $('#schedScroll');
+  const availH = Math.max(300, (scrollEl ? scrollEl.clientHeight : (window.innerHeight - 120)));
+  const HOURS = END_HOUR - START_HOUR;
+  const hourH = availH / HOURS;
+
+  let html = '';
+  for(let h = START_HOUR; h < END_HOUR; h++){
+    html += '<div class="srow" style="height:' + hourH.toFixed(1) + 'px;">';
+    html += '<div class="tl">' + pad2(h) + ':00</div>';
+
+    for(let d = 1; d <= 7; d++){
+      const isTodayCol = (d === todayIdx);
+      html += '<div class="cell' + (isTodayCol ? ' highlight' : '') +
+              '" data-d="' + d + '" data-h="' + h + '" style="position:relative;">';
+
+      const list = byDay[d];
+      if(list){
+        list.forEach(function(s){
+          const sh = hourOf(s.time);
+          if(sh !== h) return;
+          const smin = minuteOf(s.time);
+          const topPx = (smin / 60) * hourH;
+          const dur = Math.max(15, Number(s.duration) || 45);
+          let heightPx = (dur / 60) * hourH - 2;
+          const minHeight = (20 / 60) * hourH;
+          if(heightPx < minHeight) heightPx = minHeight;
+
+          html += blockHTMLWithPos(s, weekKey, d, topPx, heightPx);
+        });
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  $('#schedBody').innerHTML = html;
+}
+
+/* =========================================================
+   5. 拖拽 & 点击
+   ========================================================= */
+let drag = null;
+const dragTip = $('#dragTip');
+
+function showDragTip(x, y, text){
+  dragTip.textContent = text;
+  dragTip.style.left = x + 'px';
+  dragTip.style.top = y + 'px';
+  dragTip.style.display = 'block';
+}
+function hideDragTip(){ dragTip.style.display = 'none'; }
+
+function targetAt(px, py){
+  const schedBody = $('#schedBody');
+  const firstCell = document.querySelector('.sched-body .cell');
+  if(!firstCell) return null;
+  const cellRect = firstCell.getBoundingClientRect();
+  const cw = cellRect.width;
+  if(cw <= 0) return null;
+
+  let col = Math.floor((px - cellRect.left) / cw);
+  col = clamp(col, 0, 6);
+  const day = col + 1;
+
+  const bodyRect = schedBody.getBoundingClientRect();
+  const relY = py - bodyRect.top;
+  const HOURS = END_HOUR - START_HOUR;
+  const hourH = schedBody.offsetHeight / HOURS;
+  if(hourH <= 0) return null;
+
+  let totalMin = (relY / hourH) * 60;
+  totalMin = Math.round(totalMin / 5) * 5;
+  totalMin = clamp(totalMin, 0, HOURS * 60 - 5);
+  const hour = START_HOUR + Math.floor(totalMin / 60);
+  const minute = totalMin % 60;
+  return { day: day, hour: hour, minute: minute };
+}
+
+function beginDrag(){
+  if(!drag || drag.moved || drag.active) return;
+  const el = drag.el;
+  if(!el || !el.parentNode) return;
+  const rect = el.getBoundingClientRect();
+  if(rect.width <= 0) return;
+
+  drag.active = true;
+  const clone = el.cloneNode(true);
+  clone.className = el.className + ' drag-ghost';
+  clone.style.position = 'fixed';
+  clone.style.left = rect.left + 'px';
+  clone.style.top = rect.top + 'px';
+  clone.style.width = rect.width + 'px';
+  clone.style.height = rect.height + 'px';
+  clone.style.margin = '0';
+  clone.style.pointerEvents = 'none';
+  document.body.appendChild(clone);
+
+  drag.clone = clone;
+  drag.offsetX = drag.startX - rect.left;
+  drag.offsetY = drag.startY - rect.top;
+  drag.target = null;
+
+  el.classList.add('drag-src');
+  document.body.classList.add('dragging');
+
+  if(navigator.vibrate){ try { navigator.vibrate(28); } catch(e){} }
+  const t = targetAt(drag.startX, drag.startY);
+  if(t){
+    drag.target = t;
+    showDragTip(drag.startX, drag.startY, '周' + WEEK_CN[t.day-1] + ' ' + pad2(t.hour) + ':' + pad2(t.minute));
+  }
+}
+
+function onDown(e){
+  if(drag) return;
+  if(e.pointerType === 'mouse' && e.button !== 0) return;
+  const target = e.target;
+  const blk = target && target.closest ? target.closest('.blk') : null;
+  if(!blk) return;
+
+  drag = {
+    el: blk,
+    sid: blk.dataset.sid,
+    date: blk.dataset.date,
+    startX: e.clientX,
+    startY: e.clientY,
+    moved: false,
+    active: false,
+    clone: null,
+    target: null,
+    timer: setTimeout(beginDrag, 380)
+  };
+}
+
+function onMove(e){
+  if(!drag) return;
+  const dx = e.clientX - drag.startX;
+  const dy = e.clientY - drag.startY;
+
+  if(!drag.active){
+    if(Math.abs(dx) > 9 || Math.abs(dy) > 9){
+      drag.moved = true;
+      clearTimeout(drag.timer);
+    }
+    return;
+  }
+
+  if(e.cancelable) e.preventDefault();
+
+  const x = e.clientX - drag.offsetX;
+  const y = e.clientY - drag.offsetY;
+  if(drag.clone){
+    drag.clone.style.left = x + 'px';
+    drag.clone.style.top = y + 'px';
+  }
+  const t = targetAt(e.clientX, e.clientY);
+  if(t){
+    drag.target = t;
+    showDragTip(e.clientX, e.clientY, '周' + WEEK_CN[t.day-1] + ' ' + pad2(t.hour) + ':' + pad2(t.minute));
+  }
+}
+
+function cleanupDrag(){
+  if(!drag) return null;
+  const d = drag;
+  clearTimeout(d.timer);
+  if(d.clone && d.clone.parentNode) d.clone.parentNode.removeChild(d.clone);
+  if(d.el) d.el.classList.remove('drag-src');
+  document.body.classList.remove('dragging');
+  hideDragTip();
+  drag = null;
+  return d;
+}
+
+function onUp(e){
+  if(!drag) return;
+  const d = drag;
+  const wasActive = d.active;
+  const wasMoved = d.moved;
+  let target = d.target;
+
+  if(wasActive && !target){
+    target = targetAt(e.clientX, e.clientY);
+  }
+  cleanupDrag();
+
+  if(wasActive){
+    if(target){
+      const s = DB.students.find(x => x.id === d.sid);
+      if(s){
+        const newTime = pad2(target.hour) + ':' + pad2(target.minute);
+        if(s.day !== target.day || s.time !== newTime){
+          s.day = target.day;
+          s.time = newTime;
+          save();
+          renderSchedule();
+          toast('已调整到 周' + WEEK_CN[target.day-1] + ' ' + newTime);
+        } else {
+          renderSchedule();
+        }
+      }
+    } else {
+      renderSchedule();
+    }
+    return;
+  }
+
+  if(!wasMoved){
+    openAttendSheet(d.sid, d.date);
+  }
+}
+
+function onCancel(){
+  if(!drag) return;
+  const wasActive = drag.active;
+  cleanupDrag();
+  if(wasActive) renderSchedule();
+}
+
+document.addEventListener('pointerdown', onDown, { passive: true });
+document.addEventListener('pointermove', onMove, { passive: false });
+document.addEventListener('pointerup', onUp, { passive: true });
+document.addEventListener('pointercancel', onCancel, { passive: true });
+
+/* =========================================================
+   6. 考勤标记
+   ========================================================= */
+function markAttendance(studentId, date, status, count){
+  const s = DB.students.find(x => x.id === studentId);
+  if(!s) return;
+  count = Number(count) || 1;
+  const idx = DB.lessons.findIndex(l => l.studentId === studentId && l.date === date);
+
+  if(status === null){
+    if(idx >= 0) DB.lessons.splice(idx, 1);
+  } else {
+    const fee = Math.round((Number(s.fee) || 0) * count * 100) / 100;
+    if(idx >= 0){
+      DB.lessons[idx].status = status;
+      DB.lessons[idx].fee = fee;
+      DB.lessons[idx].count = count;
+    } else {
+      DB.lessons.push({
+        id: uid(),
+        studentId: studentId,
+        timetableId: s.timetableId,
+        week: ymd(mondayOf(parseYmd(date))),
+        status: status,
+        fee: fee,
+        count: count,
+        date: date
+      });
+    }
+  }
+  save();
+  renderSchedule();
+  renderStudents();
+  renderStats();
+  renderEnroll();
+}
+
+function fmtCount(c){
+  c = Number(c) || 1;
+  if(c === 1/3) return '1/3';
+  if(c === 0.5) return '1/2';
+  if(c === 1.5) return '1.5';
+  return String(c);
+}
+
+function openAttendSheet(sid, date){
+  const s = DB.students.find(x => x.id === sid);
+  if(!s) return;
+  const lesson = DB.lessons.find(l => l.studentId === sid && l.date === date);
+  const cur = lesson ? lesson.status : '';
+  let curCount = lesson ? (Number(lesson.count) || 1) : 1;
+
+  const countPresets = [
+    { v: 1/3, label: '1/3 节' },
+    { v: 0.5, label: '半节 (1/2)' },
+    { v: 1,   label: '1 节' },
+    { v: 1.5, label: '1.5 节' },
+    { v: 2,   label: '2 节' },
+    { v: 3,   label: '3 节' }
+  ];
+
+  function countPickerHTML(){
+    const matched = countPresets.find(o => Math.abs(curCount - o.v) < 0.001);
+    const isCustom = !matched;
+    let opts = '';
+    countPresets.forEach(function(o){
+      opts += '<option value="' + o.v + '"' + (matched && Math.abs(matched.v-o.v)<0.001 ? ' selected' : '') + '>' + o.label + '</option>';
+    });
+    opts += '<option value="custom"' + (isCustom ? ' selected' : '') + '>自定义…</option>';
+    const inputVal = isCustom ? curCount : '';
+    return '<div style="margin:12px 0 10px;">' +
+      '<div style="font-size:12px;color:#6b7280;margin-bottom:7px;font-weight:600;">本次上课节数</div>' +
+      '<div style="display:flex;gap:8px;align-items:center;">' +
+        '<select id="cntSel" style="flex:1;padding:11px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;background:#f9fafb;color:#1f2937;outline:none;">' + opts + '</select>' +
+        '<input type="number" id="cntCustom" value="' + inputVal + '" step="0.1" min="0" placeholder="自定义" style="width:90px;padding:11px 10px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;text-align:center;outline:none;' + (isCustom ? '' : 'opacity:.4;') + '">' +
+      '</div>' +
+      '<div class="count-fee" style="font-size:11px;color:#9ca3af;margin-top:7px;">' +
+        '单价 ¥' + (s.fee||0) + ' × ' + fmtCount(curCount) + ' = <b style="color:#4f46e5;">¥' +
+        (Math.round((s.fee||0)*curCount*100)/100) + '</b></div>' +
+      '</div>';
+  }
+
+  function buildHTML(){
+    return '<div class="sheet">' +
+      '<div class="sheet-title">' + esc(s.name) + ' · ' + esc(s.subject) + '</div>' +
+      '<div class="sheet-sub">' + fmtDateCN(date) + ' · ' + esc(s.time) + ' · ' + s.duration + '分钟</div>' +
+      countPickerHTML() +
+      '<div class="attend-grid">' +
+        '<button class="attend-btn done' + (cur === '已上课' ? ' on' : '') + '" data-st="已上课">✓ 已上课</button>' +
+        '<button class="attend-btn leave' + (cur === '请假' ? ' on' : '') + '" data-st="请假">请假</button>' +
+        '<button class="attend-btn absent' + (cur === '旷课' ? ' on' : '') + '" data-st="旷课">旷课</button>' +
+      '</div>' +
+      '<button class="wide-btn ghost" id="atClear"' + (cur ? '' : ' disabled') + '>取消标记</button>' +
+      '<button class="wide-btn ghost" id="atEdit">查看 / 编辑学生</button>' +
+      '<button class="wide-btn" id="atClose">关闭</button>' +
+    '</div>';
+  }
+
+  const ref = showSheet(buildHTML());
+
+  function refresh(){
+    ref.el.innerHTML = buildHTML();
+    bind();
+  }
+
+  function bind(){
+    const sel = ref.el.querySelector('#cntSel');
+    const custom = ref.el.querySelector('#cntCustom');
+    if(sel){
+      sel.onchange = function(){
+        if(sel.value === 'custom'){
+          custom.style.opacity = '1';
+          custom.focus();
+        } else {
+          curCount = parseFloat(sel.value) || 1;
+          custom.style.opacity = '.4';
+          custom.value = '';
+          refresh();
+        }
+      };
+    }
+    if(custom){
+      custom.oninput = function(){
+        const v = parseFloat(custom.value);
+        if(v > 0){ curCount = v; sel.value = 'custom'; refreshFeeOnly(); }
+      };
+    }
+    function refreshFeeOnly(){
+      const feeEl = ref.el.querySelector('.count-fee');
+      if(feeEl) feeEl.innerHTML = '单价 ¥' + (s.fee||0) + ' × ' + fmtCount(curCount) + ' = <b style="color:#4f46e5;">¥' + (Math.round((s.fee||0)*curCount*100)/100) + '</b>';
+    }
+    ref.el.querySelectorAll('[data-st]').forEach(function(btn){
+      btn.onclick = function(){
+        markAttendance(sid, date, btn.dataset.st, curCount);
+        ref.close();
+        toast('已标记：' + btn.dataset.st + '（' + fmtCount(curCount) + '节）');
+      };
+    });
+    const clr = ref.el.querySelector('#atClear');
+    if(clr) clr.onclick = function(){
+      markAttendance(sid, date, null);
+      ref.close();
+      toast('已取消标记');
+    };
+    const ed = ref.el.querySelector('#atEdit');
+    if(ed) ed.onclick = function(){
+      ref.close();
+      setTimeout(function(){ openStudentDetail(sid); }, 220);
+    };
+    const cc = ref.el.querySelector('#atClose');
+    if(cc) cc.onclick = function(){ ref.close(); };
+  }
+  bind();
+}
+
+/* =========================================================
+   7. 课表选择 / 新建
+   ========================================================= */
+function openTimetablePicker(){
+  const curId = currentTtId;
+  let html = '<div class="sheet">' +
+    '<div class="sheet-title">选择课表</div>' +
+    '<div class="sheet-sub">点击切换，或新建课表</div>' +
+    '<div class="tt-list">';
+  DB.timetables.forEach(function(t){
+    const isCur = t.id === curId;
+    html += '<button class="tt-opt' + (isCur ? ' cur' : '') + '" data-tt="' + t.id + '">' +
+              '<span>' + esc(t.name) + (t.isDefault ? ' <span class="tt-sub">默认</span>' : '') + '</span>' +
+              (isCur ? '<span class="tt-check">✓</span>' : '') +
+            '</button>';
+  });
+  html += '</div>' +
+    '<button class="wide-btn primary" data-act="new">＋ 新建课表</button>' +
+    '<button class="wide-btn ghost" data-act="cancel">取消</button>' +
+    '</div>';
+
+  showSheet(html, function(a){
+    if(a.type === 'tt'){
+      currentTtId = a.value;
+      save();
+      renderSchedule();
+      renderStats();
+      a.close();
+      toast('已切换到「' + (DB.timetables.find(t=>t.id===currentTtId)||{}).name + '」');
+    } else if(a.value === 'new'){
+      a.close();
+      setTimeout(openNewTimetableForm, 200);
+    } else if(a.value === 'cancel'){
+      a.close();
+    }
+  });
+}
+
+function openNewTimetableForm(){
+  const html =
+    '<div class="sheet">' +
+      '<div class="sheet-title">新建课表</div>' +
+      '<div class="sheet-sub">可用于临时课表、假期班等</div>' +
+      '<div class="form-row"><label>课表名称</label>' +
+        '<input type="text" id="nt_name" placeholder="如：寒假临时课表"/></div>' +
+      '<button class="wide-btn primary" data-act="ok">创建</button>' +
+      '<button class="wide-btn" data-act="cancel">取消</button>' +
+    '</div>';
+  const ref = showSheet(html, function(a){
+    if(a.value === 'cancel'){ a.close(); return; }
+    if(a.value !== 'ok') return;
+    const nameEl = document.getElementById('nt_name');
+    const name = (nameEl && nameEl.value || '').trim();
+    if(!name){ toast('请输入课表名称'); return; }
+    const id = 'tt_' + Date.now().toString(36);
+    DB.timetables.push({ id: id, name: name, isDefault: false });
+    currentTtId = id;
+    save();
+    renderSchedule();
+    renderStats();
+    a.close();
+    toast('课表「' + name + '」已创建');
+  });
+  setTimeout(function(){
+    const i = ref.el.querySelector('#nt_name');
+    if(i) i.focus();
+  }, 200);
+}
+
+/* =========================================================
+   8. 学生管理
+   ========================================================= */
+function calcStats(s){
+  const ls = DB.lessons.filter(l => l.studentId === s.id);
+  let done = 0, leave = 0, absent = 0;
+  ls.forEach(l=>{
+    const c = Number(l.count) || 1;
+    if(l.status === '已上课') done += c;
+    else if(l.status === '请假') leave += c;
+    else if(l.status === '旷课') absent += c;
+  });
+  const total = Number(s.totalLessons) || 0;
+  const remain = Math.max(0, total - done);
+  const end = addMonths(parseYmd(s.startDate), Number(s.validMonths) || 3);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const daysLeft = Math.ceil((end - today) / 86400000);
+  return { done: done, leave: leave, absent: absent, remain: remain, total: total,
+           end: end, daysLeft: daysLeft, endStr: ymd(end) };
+}
+
+function lastStatusOf(sid){
+  const ls = DB.lessons.filter(l => l.studentId === sid);
+  if(!ls.length) return '';
+  ls.sort((a,b)=> a.date < b.date ? 1 : -1);
+  return ls[0].status;
+}
+
+function renderStuTtFilter(){
+  const sel = $('#stuTtFilter');
+  if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="all">全部课表</option>' +
+    DB.timetables.map(function(t){
+      return '<option value="' + t.id + '"' + (t.id === cur ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+    }).join('');
+  if(!DB.timetables.find(t => t.id === cur)) sel.value = 'all';
+}
+
+function renderStudents(){
+  renderStuTtFilter();
+  const q = ($('#stuSearch').value || '').trim().toLowerCase();
+  const ttSel = $('#stuTtFilter');
+  const stSel = $('#stuStatus');
+  const ttFilter = ttSel ? ttSel.value : 'all';
+  const statusFilter = stSel ? stSel.value : 'all';
+  const sortBy = stuSortBy;
+  const list = $('#stuList');
+
+  let arr = activeStudents().slice();
+
+  arr = arr.filter(function(s){
+    if(q){
+      const tt = DB.timetables.find(t => t.id === s.timetableId);
+      const hay = (s.name + ' ' + s.subject + ' ' + (tt ? tt.name : '')).toLowerCase();
+      if(hay.indexOf(q) < 0) return false;
+    }
+    if(ttFilter !== 'all' && s.timetableId !== ttFilter) return false;
+    if(statusFilter === 'active' && s.completed) return false;
+    if(statusFilter === 'completed' && !s.completed) return false;
+    if(statusFilter === '已上课' || statusFilter === '请假' || statusFilter === '旷课'){
+      if(lastStatusOf(s.id) !== statusFilter) return false;
+    }
+    return true;
+  });
+
+  arr.sort(function(a,b){
+    const sa = calcStats(a), sb = calcStats(b);
+    const dir = stuSortDir === 'asc' ? 1 : -1;
+    const nameCmp = String(a.name).localeCompare(String(b.name), 'zh');
+    let cmp = 0;
+    switch(sortBy){
+      case 'remain': cmp = sa.remain - sb.remain; break;
+      case 'expire': cmp = sa.daysLeft - sb.daysLeft; break;
+      case 'done': cmp = sa.done - sb.done; break;
+      case 'leave': cmp = sa.leave - sb.leave; break;
+      case 'absent': cmp = sa.absent - sb.absent; break;
+      default: cmp = String(a.startDate || '').localeCompare(String(b.startDate || '')); break;
+    }
+    if(cmp !== 0) return cmp * dir;
+    return nameCmp;
+  });
+
+  if(!arr.length){
+    list.innerHTML = '<div class="empty">' + (activeStudents().length ? '没有匹配的学员' : '暂无学员，点击右上角 ＋ 添加') + '</div>';
+    return;
+  }
+
+  list.innerHTML = arr.map(function(s){
+    const st = calcStats(s);
+    const c = colorOf(s.id);
+    const remainCls = st.remain < 5 ? ' warn' : '';
+    const tt = DB.timetables.find(t => t.id === s.timetableId);
+    return '<div class="stu-card" data-id="' + s.id + '" style="--c:' + c + '">' +
+      '<div class="stu-top">' +
+        '<div class="stu-name">' + esc(s.name) + '<span class="tag">' + esc(s.subject) + '</span>' +
+          (s.completed ? '<span class="tag" style="background:#059669;color:#fff;margin-left:4px;">已结课</span>' : '') +
+        '</div>' +
+        '<div class="stu-remain' + remainCls + '">' + (s.completed ? '已结课' : '剩余 ' + st.remain + ' 节') + '</div>' +
+      '</div>' +
+      '<div class="stu-meta">' +
+        '<span>🕐 <b>周' + WEEK_CN[s.day-1] + ' ' + esc(s.time) + '</b>（' + s.duration + '分钟）</span>' +
+        '<span>💰 <b>¥' + s.fee + '</b>/节</span>' +
+        '<span>📚 ' + esc(tt ? tt.name : '—') + '</span>' +
+      '</div>' +
+      '<div class="stu-stats">' +
+        '<span class="pill g">已上 ' + st.done + '</span>' +
+        '<span class="pill o">请假 ' + st.leave + '</span>' +
+        '<span class="pill r">旷课 ' + st.absent + '</span>' +
+        '<span class="pill b">剩余 ' + st.daysLeft + ' 天</span>' +
+      '</div>' +
+      (s.completed && s.completedAt ? '<div class="stu-meta" style="margin-top:4px;"><span style="color:#059669;">结课日期：' + esc(s.completedAt) + '</span></div>' : '') +
+    '</div>';
+  }).join('');
+}
+
+$('#stuList').addEventListener('click', function(e){
+  const card = e.target.closest('.stu-card');
+  if(!card) return;
+  openStudentDetail(card.dataset.id);
+});
+
+$('#stuSearch').addEventListener('input', renderStudents);
+
+if($('#stuTtFilter')) $('#stuTtFilter').addEventListener('change', renderStudents);
+if($('#stuStatus')) $('#stuStatus').addEventListener('change', renderStudents);
+
+// 排序按钮：弹出排序选择
+if($('#stuSortBtn')) $('#stuSortBtn').addEventListener('click', function(){
+  const cur = stuSortBy;
+  const opts = STU_SORT_OPTS.map(function(o){
+    return '<button class="wide-btn' + (o.v === cur ? ' primary' : ' ghost') + '" data-sort="' + o.v + '">' + (o.v === cur ? '✓ ' : '') + o.label + '</button>';
+  }).join('');
+  const ref = showSheet('<div class="sheet" style="max-width:420px;">' +
+    '<div class="sheet-title">选择排序方式</div>' + opts +
+    '<button class="wide-btn" data-act="close">关闭</button>' +
+  '</div>', function(a){
+    if(a.value === 'close') a.close();
+  });
+  setTimeout(function(){
+    ref.el.querySelectorAll('[data-sort]').forEach(function(btn){
+      btn.onclick = function(){
+        stuSortBy = btn.dataset.sort;
+        renderStudents();
+        ref.close();
+      };
+    });
+  }, 10);
+});
+
+// 正反序切换按钮
+if($('#stuSortDirBtn')) $('#stuSortDirBtn').addEventListener('click', function(){
+  stuSortDir = stuSortDir === 'asc' ? 'desc' : 'asc';
+  this.textContent = stuSortDir === 'asc' ? '↑' : '↓';
+  this.title = stuSortDir === 'asc' ? '正序（升序）' : '倒序（降序）';
+  renderStudents();
+});
+
+/* =========================================================
+   9. 学生详情
+   ========================================================= */
+function openStudentDetail(sid){
+  const s = DB.students.find(x => x.id === sid);
+  if(!s) return;
+  const st = calcStats(s);
+  const tt = DB.timetables.find(t => t.id === s.timetableId);
+
+  const html =
+    '<div class="sheet">' +
+      '<div class="sheet-title">' + esc(s.name) + '</div>' +
+      '<div class="sheet-sub">' + esc(s.subject) + ' · ' + esc(tt ? tt.name : '—') + '</div>' +
+      '<div class="attend-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:14px;">' +
+        '<div style="text-align:center;background:#dcfce7;border-radius:10px;padding:10px 2px;">' +
+          '<div style="font-size:19px;font-weight:700;color:#166534;">' + st.done + '</div>' +
+          '<div style="font-size:10.5px;color:#166534;margin-top:2px;">已上节数</div></div>' +
+        '<div style="text-align:center;background:#fef3c7;border-radius:10px;padding:10px 2px;">' +
+          '<div style="font-size:19px;font-weight:700;color:#92400e;">' + st.leave + '</div>' +
+          '<div style="font-size:10.5px;color:#92400e;margin-top:2px;">请假节数</div></div>' +
+        '<div style="text-align:center;background:#e5e7eb;border-radius:10px;padding:10px 2px;">' +
+          '<div style="font-size:19px;font-weight:700;color:#4b5563;">' + st.absent + '</div>' +
+          '<div style="font-size:10.5px;color:#4b5563;margin-top:2px;">旷课节数</div></div>' +
+      '</div>' +
+      '<div class="detail-line"><span class="k">剩余课数</span><span class="v">' + st.remain + ' / ' + st.total + ' 节</span></div>' +
+      '<div class="detail-line"><span class="k">上课时间</span><span class="v">周' + WEEK_CN[s.day-1] + ' ' + esc(s.time) + '（' + s.duration + '分钟）</span></div>' +
+      '<div class="detail-line"><span class="k">上课老师</span><span class="v">' + esc(s.teacher || '—') + '</span></div>' +
+      '<div class="detail-line"><span class="k">课时单价</span><span class="v">¥' + s.fee + ' / 节</span></div>' +
+      '<div class="detail-line"><span class="k">课时费标准</span><span class="v">' + esc(s.feeStd || '—') + '</span></div>' +
+      '<div class="detail-line"><span class="k">应收金额</span><span class="v">¥' + ((s.fee||0) * (s.totalLessons||0)) + '</span></div>' +
+      '<div class="detail-line"><span class="k">优惠金额</span><span class="v">' + (s.discount ? '¥' + s.discount : '无') + '</span></div>' +
+      '<div class="detail-line"><span class="k">实际交费</span><span class="v" style="color:#4f46e5;font-weight:700;">¥' + s.payAmount + '（' + s.payTimes + '次）</span></div>' +
+      '<div class="detail-line"><span class="k">收费日期 / 方式</span><span class="v">' + esc(s.payDate) + ' · ' + esc(s.payMethod) + '</span></div>' +
+      '<div class="detail-line"><span class="k">报名日期</span><span class="v">' + esc(s.startDate) + '</span></div>' +
+      '<div class="detail-line"><span class="k">有效期至</span><span class="v" style="' + (st.daysLeft <= 10 ? 'color:#ef4444;' : '') + '">' + st.endStr + '（剩 ' + st.daysLeft + ' 天）</span></div>' +
+      (s.completed
+        ? '<div class="detail-line"><span class="k">结课状态</span><span class="v" style="color:#059669;font-weight:700;">✓ 已结课（' + esc(s.completedAt) + '）</span></div>' +
+          (s.completeNote ? '<div class="detail-line"><span class="k">结课备注</span><span class="v">' + esc(s.completeNote) + '</span></div>' : '')
+        : '') +
+      (s.note ? '<div class="detail-line"><span class="k">备注</span><span class="v">' + esc(s.note) + '</span></div>' : '') +
+      '<div style="height:14px;"></div>' +
+      '<button class="wide-btn primary" data-act="edit">编辑学生</button>' +
+      '<button class="wide-btn ghost" data-act="receipt">🧾 出交费凭证</button>' +
+      (s.completed
+        ? ''
+        : '<button class="wide-btn" style="background:#059669;color:#fff;" data-act="complete">🎓 结课</button>') +
+      '<button class="wide-btn ghost" data-act="exp-done">导出上课明细</button>' +
+      '<button class="wide-btn ghost" data-act="exp-abs">导出缺勤明细</button>' +
+      '<button class="wide-btn danger" data-act="del">删除学生</button>' +
+      '<button class="wide-btn" data-act="close">关闭</button>' +
+    '</div>';
+
+  showSheet(html, function(a){
+    if(a.value === 'edit'){
+      a.close(); setTimeout(function(){ openStudentForm(sid); }, 220);
+    } else if(a.value === 'receipt'){
+      a.close(); setTimeout(function(){ openReceiptEditor(sid); }, 200);
+    } else if(a.value === 'complete'){
+      a.close(); setTimeout(function(){ openCompleteDialog(sid); }, 200);
+    } else if(a.value === 'exp-done'){
+      a.close(); setTimeout(function(){ exportStudentDetail(sid, '已上课'); }, 200);
+    } else if(a.value === 'exp-abs'){
+      a.close(); setTimeout(function(){ exportStudentDetail(sid, ['请假','旷课']); }, 200);
+    } else if(a.value === 'del'){
+      a.close();
+      setTimeout(function(){
+        confirmBox('删除学生', '将「' + esc(s.name) + '」移入回收站？可在「回收站」中恢复或彻底删除。', '移入回收站', function(){
+          s.deleted = true;
+          s.deletedAt = ymd(new Date());
+          save();
+          renderSchedule(); renderStudents(); renderStats(); renderEnroll();
+          toast('已移入回收站');
+        });
+      }, 220);
+    } else if(a.value === 'close'){
+      a.close();
+    }
+  });
+}
+
+/* =========================================================
+   9.5 报名结课 & 回收站
+   ========================================================= */
+function renderEnroll(){
+  const q = ($('#enrollSearch').value || '').trim().toLowerCase();
+  const list = $('#enrollList');
+  let arr = activeStudents().slice();
+  arr.sort(function(a,b){
+    const d = String(b.startDate || '').localeCompare(String(a.startDate || ''));
+    if(d !== 0) return d;
+    return String(a.name).localeCompare(String(b.name), 'zh');
+  });
+  arr = arr.filter(function(s){
+    if(enrollFilter === 'active' && s.completed) return false;
+    if(enrollFilter === 'done' && !s.completed) return false;
+    if(q){
+      const tt = DB.timetables.find(t => t.id === s.timetableId);
+      const hay = (s.name + ' ' + s.subject + ' ' + (tt ? tt.name : '') + ' ' + (s.teacher||'')).toLowerCase();
+      if(hay.indexOf(q) < 0) return false;
+    }
+    return true;
+  });
+
+  if(!arr.length){
+    list.innerHTML = '<div class="empty">' + (activeStudents().length ? '没有匹配的学员' : '暂无学员') + '</div>';
+    return;
+  }
+
+  list.innerHTML = arr.map(function(s){
+    const st = calcStats(s);
+    const c = colorOf(s.id);
+    const tt = DB.timetables.find(t => t.id === s.timetableId);
+    const doneTag = s.completed ? '<span class="pill" style="background:#fef3c7;color:#92400e;">已结课</span>' : '';
+    return '<div class="stu-card" data-id="' + s.id + '" style="--c:' + c + '">' +
+      '<div class="stu-top">' +
+        '<div class="stu-name">' + esc(s.name) + '<span class="tag">' + esc(s.subject) + '</span>' + doneTag + '</div>' +
+        '<div class="stu-remain">¥' + s.payAmount + '</div>' +
+      '</div>' +
+      '<div class="stu-meta">' +
+        '<span>🕐 周' + WEEK_CN[s.day-1] + ' ' + esc(s.time) + '（' + s.duration + '分钟）</span>' +
+        '<span>💰 ¥' + s.fee + '/节 · ' + s.totalLessons + '节</span>' +
+        (s.teacher ? '<span>👨‍🏫 ' + esc(s.teacher) + '</span>' : '') +
+      '</div>' +
+      '<div class="stu-stats">' +
+        '<span class="pill g">已上 ' + st.done + '</span>' +
+        '<span class="pill b">剩 ' + st.remain + ' 节</span>' +
+        '<span class="pill">📅 ' + esc(s.payDate) + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+$('#enrollList').addEventListener('click', function(e){
+  const card = e.target.closest('.stu-card');
+  if(card) openEnrollDetail(card.dataset.id);
+});
+$('#enrollSearch').addEventListener('input', renderEnroll);
+$$('#enrollChips .chip').forEach(function(b){
+  b.addEventListener('click', function(){
+    $$('#enrollChips .chip').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    enrollFilter = b.dataset.f;
+    renderEnroll();
+  });
+});
+
+function openEnrollDetail(sid){
+  const s = DB.students.find(x => x.id === sid);
+  if(!s) return;
+  const st = calcStats(s);
+  const receivable = (s.fee||0) * (s.totalLessons||0);
+  const tt = DB.timetables.find(t => t.id === s.timetableId);
+  const html =
+    '<div class="sheet">' +
+      '<div class="sheet-title">' + esc(s.name) + ' · ' + esc(s.subject) + (s.completed ? '（已结课）' : '') + '</div>' +
+      '<div class="sheet-sub">' + esc(s.payDate) + ' 报名 · ' + esc(tt ? tt.name : '—') + '</div>' +
+      '<div class="detail-line"><span class="k">排课时间</span><span class="v">周' + WEEK_CN[s.day-1] + ' ' + esc(s.time) + '（' + s.duration + '分钟）</span></div>' +
+      '<div class="detail-line"><span class="k">上课老师</span><span class="v">' + esc(s.teacher || '—') + '</span></div>' +
+      '<div class="detail-line"><span class="k">课时单价</span><span class="v">¥' + s.fee + ' / 节 × ' + s.totalLessons + ' 节</span></div>' +
+      '<div class="detail-line"><span class="k">应收金额</span><span class="v">¥' + receivable + '</span></div>' +
+      '<div class="detail-line"><span class="k">优惠金额</span><span class="v">¥' + (s.discount || 0) + '</span></div>' +
+      '<div class="detail-line"><span class="k">实际交费</span><span class="v" style="color:#4f46e5;font-weight:700;">¥' + s.payAmount + '（' + s.payTimes + '次）</span></div>' +
+      '<div class="detail-line"><span class="k">交费方式</span><span class="v">' + esc(s.payMethod) + '</span></div>' +
+      '<div class="detail-line"><span class="k">课程有效期</span><span class="v">' + esc(s.startDate) + ' 至 ' + st.endStr + '</span></div>' +
+      '<div class="detail-line"><span class="k">已上 / 剩余</span><span class="v">' + st.done + ' / ' + st.remain + ' 节</span></div>' +
+      (s.note ? '<div class="detail-line"><span class="k">备注</span><span class="v">' + esc(s.note) + '</span></div>' : '') +
+      '<div style="height:10px;"></div>' +
+      '<button class="wide-btn primary" data-act="receipt">🧾 出交费凭证</button>' +
+      (s.completed
+        ? '<button class="wide-btn ghost" data-act="uncomplete">↩️ 取消结课</button>'
+        : '<button class="wide-btn" style="background:#059669;color:#fff;" data-act="complete">🎓 结课</button>') +
+      '<button class="wide-btn ghost" data-act="edit">✏️ 编辑学生</button>' +
+      '<button class="wide-btn" data-act="close">关闭</button>' +
+    '</div>';
+
+  showSheet(html, function(a){
+    if(a.value === 'receipt'){ a.close(); setTimeout(function(){ openReceiptEditor(sid); }, 200); }
+    else if(a.value === 'complete'){
+      a.close(); setTimeout(function(){ openCompleteDialog(sid); }, 200);
+    }
+    else if(a.value === 'uncomplete'){
+      s.completed = false; s.completedAt = '';
+      s.completeNote = '';
+      s.completeServiceFee = 0; s.completeRefund = 0;
+      save(); renderEnroll(); renderStudents(); a.close(); toast('已取消结课');
+    }
+    else if(a.value === 'edit'){ a.close(); setTimeout(function(){ openStudentForm(sid); }, 220); }
+    else if(a.value === 'close'){ a.close(); }
+  });
+}
+
+function renderRecycle(){
+  const list = $('#recycleList');
+  const arr = deletedStudents();
+  if(!arr.length){
+    list.innerHTML = '<div class="empty">回收站为空</div>';
+    return;
+  }
+  list.innerHTML = arr.map(function(s){
+    return '<div class="stu-card" style="--c:#9ca3af;opacity:.75;">' +
+      '<div class="stu-top">' +
+        '<div class="stu-name">' + esc(s.name) + '<span class="tag">' + esc(s.subject) + '</span></div>' +
+        '<div class="stu-remain" style="color:#9ca3af;">删除于 ' + esc(s.deletedAt) + '</div>' +
+      '</div>' +
+      '<div class="stu-meta"><span>💰 ¥' + s.fee + '/节 · ' + s.totalLessons + '节</span></div>' +
+      '<div style="display:flex;gap:8px;margin-top:10px;">' +
+        '<button class="wide-btn primary" style="margin:0;" data-restore="' + s.id + '">♻️ 恢复</button>' +
+        '<button class="wide-btn danger" style="margin:0;" data-purge="' + s.id + '">彻底删除</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+$('#recycleList').addEventListener('click', function(e){
+  const rb = e.target.closest('[data-restore]');
+  const pb = e.target.closest('[data-purge]');
+  if(rb){
+    const s = DB.students.find(x => x.id === rb.dataset.restore);
+    if(s){ s.deleted = false; s.deletedAt = ''; save(); renderRecycle(); toast('已恢复'); }
+  } else if(pb){
+    const sid = pb.dataset.purge;
+    const s = DB.students.find(x => x.id === sid);
+    if(!s) return;
+    confirmBox('彻底删除', '确定彻底删除「' + esc(s.name) + '」吗？此操作不可恢复，课时记录也将一并删除。', '彻底删除', function(){
+      DB.students = DB.students.filter(x => x.id !== sid);
+      DB.lessons = DB.lessons.filter(x => x.studentId !== sid);
+      save(); renderRecycle(); toast('已彻底删除');
+    });
+  }
+});
+
+/* =========================================================
+   10. 学生表单
+   ========================================================= */
+function openStudentForm(sid){
+  const isEdit = !!sid;
+  const s = isEdit ? DB.students.find(x => x.id === sid) : null;
+  if(isEdit && !s) return;
+  const todayStr = ymd(new Date());
+
+  const d = {
+    name: s ? s.name : '',
+    subject: s ? s.subject : '尤克里里',
+    day: s ? s.day : 1,
+    time: s ? s.time : '09:00',
+    duration: s ? s.duration : 45,
+    fee: s ? s.fee : 0,
+    feeStd: s ? s.feeStd : '',
+    discount: s ? (Number(s.discount) || 0) : 0,
+    payAmount: s ? s.payAmount : 0,
+    payTimes: s ? s.payTimes : 1,
+    payDate: s ? s.payDate : todayStr,
+    payMethod: s ? s.payMethod : '微信',
+    totalLessons: s ? s.totalLessons : 20,
+    validMonths: s ? s.validMonths : 3,
+    startDate: s ? s.startDate : todayStr,
+    note: s ? s.note : '',
+    teacher: s ? (s.teacher || '') : '',
+    timetableId: s ? s.timetableId : currentTtId
+  };
+
+  const subjectIsCustom = SUBJECTS.indexOf(d.subject) < 0;
+
+  let subjOpts = SUBJECTS.map(function(x){
+    return '<option value="' + esc(x) + '"' + (x === d.subject ? ' selected' : '') + '>' + esc(x) + '</option>';
+  }).join('');
+  subjOpts += '<option value="__custom__"' + (subjectIsCustom ? ' selected' : '') + '>自定义</option>';
+
+  const payOpts = PAY_METHODS.map(function(x){
+    return '<option value="' + esc(x) + '"' + (x === d.payMethod ? ' selected' : '') + '>' + esc(x) + '</option>';
+  }).join('');
+
+  let feeStdIndex = -1;
+  FEE_PRESETS.forEach(function(p, i){
+    if(d.feeStd && d.feeStd.indexOf(String(p.fee)) >= 0 && d.feeStd.indexOf(String(p.dur)) >= 0){
+      if(feeStdIndex < 0) feeStdIndex = i;
+    }
+  });
+  let feeOpts = '<option value="">— 请选择 —</option>';
+  FEE_PRESETS.forEach(function(p, i){
+    const sel = (i === feeStdIndex) ? ' selected' : '';
+    feeOpts += '<option value="' + i + '"' + sel + '>' + esc(p.label) + '</option>';
+  });
+  feeOpts += '<option value="__custom__">自定义</option>';
+
+  const dayOpts = WEEK_FULL.map(function(x, i){
+    return '<option value="' + (i+1) + '"' + ((i+1) === d.day ? ' selected' : '') + '>' + x + '</option>';
+  }).join('');
+
+  const ttOpts = DB.timetables.map(function(t){
+    return '<option value="' + t.id + '"' + (t.id === d.timetableId ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+  }).join('');
+
+  const html =
+    '<div class="sheet">' +
+      '<div class="sheet-title">' + (isEdit ? '编辑学生' : '新建学生') + '</div>' +
+      '<div class="sheet-sub">带 <span style="color:#ef4444;">*</span> 为必填项</div>' +
+
+      '<div class="form-row"><label>姓名<span class="req">*</span></label>' +
+        '<input type="text" id="f_name" value="' + esc(d.name) + '" placeholder="请输入学生姓名"/></div>' +
+
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>科目</label>' +
+          '<select id="f_subject">' + subjOpts + '</select></div>' +
+        '<div class="form-row" id="wrap_customSubj" style="display:' + (subjectIsCustom ? 'block' : 'none') + ';">' +
+          '<label>自定义科目</label>' +
+          '<input type="text" id="f_customSubj" value="' + (subjectIsCustom ? esc(d.subject) : '') + '" placeholder="如：钢琴"/></div>' +
+      '</div>' +
+
+      '<div class="form-sec">排课信息</div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>上课星期</label><select id="f_day">' + dayOpts + '</select></div>' +
+        '<div class="form-row"><label>上课时间（可精确到分钟）</label><input type="time" id="f_time" value="' + esc(d.time) + '" step="60"/></div>' +
+      '</div>' +
+      '<div class="form-row"><label>上课老师</label><input type="text" id="f_teacher" value="' + esc(d.teacher || '') + '" placeholder="如：张老师"/></div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>上课时长（分钟）</label><input type="number" id="f_duration" value="' + d.duration + '" min="15" step="5"/></div>' +
+        '<div class="form-row"><label>所属课表</label><select id="f_tt">' + ttOpts + '</select></div>' +
+      '</div>' +
+
+      '<div class="form-sec">收费信息</div>' +
+      '<div class="form-row"><label>课时费标准</label><select id="f_feeStd">' + feeOpts + '</select></div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>课时单价（元/节）</label><input type="number" id="f_fee" value="' + d.fee + '" min="0" step="1"/></div>' +
+        '<div class="form-row"><label>已购总课时数</label><input type="number" id="f_total" value="' + d.totalLessons + '" min="0" step="1"/></div>' +
+      '</div>' +
+      '<div class="form-row"><label>应收金额（元）</label><input type="text" id="f_receivable" value="' + (d.fee * d.totalLessons) + '" readonly class="ro-input"/></div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>优惠金额（元）</label><input type="number" id="f_discount" value="' + d.discount + '" min="0" step="1"/></div>' +
+        '<div class="form-row"><label>实际交费（元）</label><input type="number" id="f_payAmount" value="' + d.payAmount + '" min="0" step="1"/></div>' +
+      '</div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>报名次数</label><input type="number" id="f_payTimes" value="' + d.payTimes + '" min="1" step="1"/></div>' +
+        '<div class="form-row"><label>收费方式</label><select id="f_payMethod">' + payOpts + '</select></div>' +
+      '</div>' +
+
+      '<div class="form-sec">有效期</div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>报名日期</label><input type="date" id="f_startDate" value="' + esc(d.startDate) + '"/></div>' +
+        '<div class="form-row"><label>有效期（月）</label><input type="number" id="f_validMonths" value="' + d.validMonths + '" min="1" step="1"/></div>' +
+      '</div>' +
+
+      '<div class="form-row"><label>备注（可选）</label><textarea id="f_note" placeholder="选填">' + esc(d.note) + '</textarea></div>' +
+
+      '<button type="button" class="wide-btn primary" id="btnSaveStudent">保存</button>' +
+      '<button type="button" class="wide-btn" id="btnCancelStudent">取消</button>' +
+    '</div>';
+
+  const mask = document.createElement('div');
+  mask.className = 'modal-mask';
+  mask.innerHTML = html;
+  document.body.appendChild(mask);
+  requestAnimationFrame(function(){ mask.classList.add('open'); });
+
+  let closed = false;
+  function closeSheet(){
+    if(closed) return;
+    closed = true;
+    mask.classList.remove('open');
+    setTimeout(function(){ if(mask.parentNode) mask.parentNode.removeChild(mask); }, 260);
+  }
+
+  // 右上角关闭 X
+  const sheetEl = mask.querySelector('.sheet');
+  if(sheetEl){
+    const x = document.createElement('button');
+    x.className = 'sheet-x';
+    x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    x.onclick = closeSheet;
+    sheetEl.appendChild(x);
+  }
+
+  mask.addEventListener('click', function(e){
+    if(e.target === mask) closeSheet();
+    if(e.target.closest('.sheet-x')) return;
+  });
+
+  function val(id){
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+  }
+
+  function getNum(id){ return Number(document.getElementById(id) && document.getElementById(id).value) || 0; }
+
+  // 应收金额 = 单价 × 总课时；实际交费 = 应收 - 优惠
+  function recalcPay(keepPay){
+    const recEl = document.getElementById('f_receivable');
+    const payEl = document.getElementById('f_payAmount');
+    const disEl = document.getElementById('f_discount');
+    if(!recEl || !payEl || !disEl) return;
+    const fee = getNum('f_fee');
+    const total = getNum('f_total');
+    const receivable = fee * total;
+    recEl.value = receivable;
+    const discount = getNum('f_discount');
+    if(keepPay){
+      // 保持实际交费不变，反推优惠
+      const pay = getNum('f_payAmount');
+      disEl.value = Math.max(0, Math.round((receivable - pay) * 100) / 100);
+    } else {
+      payEl.value = Math.max(0, Math.round((receivable - discount) * 100) / 100);
+    }
+  }
+
+  const selSubj = document.getElementById('f_subject');
+  if(selSubj){
+    selSubj.addEventListener('change', function(){
+      const wrap = document.getElementById('wrap_customSubj');
+      if(wrap) wrap.style.display = (selSubj.value === '__custom__') ? 'block' : 'none';
+      if(selSubj.value === '__custom__'){
+        setTimeout(function(){ const i = document.getElementById('f_customSubj'); if(i) i.focus(); }, 120);
+      }
+    });
+  }
+
+  const selFee = document.getElementById('f_feeStd');
+  if(selFee){
+    selFee.addEventListener('change', function(){
+      const v = selFee.value;
+      if(v !== '' && v !== '__custom__'){
+        const p = FEE_PRESETS[+v];
+        if(p){
+          const feeEl = document.getElementById('f_fee');
+          const durEl = document.getElementById('f_duration');
+          if(feeEl) feeEl.value = p.fee;
+          if(durEl) durEl.value = p.dur;
+          recalcPay();
+        }
+      }
+    });
+  }
+
+  const inpFee = document.getElementById('f_fee');
+  const inpTotal = document.getElementById('f_total');
+  const inpDiscount = document.getElementById('f_discount');
+  const inpPay = document.getElementById('f_payAmount');
+  if(inpFee) inpFee.addEventListener('input', function(){ recalcPay(); });
+  if(inpTotal) inpTotal.addEventListener('input', function(){ recalcPay(); });
+  if(inpDiscount) inpDiscount.addEventListener('input', function(){ recalcPay(); });
+  if(inpPay) inpPay.addEventListener('input', function(){ recalcPay(true); });
+
+  const btnSave = document.getElementById('btnSaveStudent');
+  if(btnSave){
+    btnSave.addEventListener('click', function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+
+      const nameVal = (val('f_name') || '').trim();
+      if(!nameVal){
+        toast('请填写学生姓名');
+        const el = document.getElementById('f_name');
+        if(el) el.focus();
+        return;
+      }
+
+      let subjectVal = val('f_subject') || '尤克里里';
+      if(subjectVal === '__custom__'){
+        subjectVal = (val('f_customSubj') || '').trim();
+        if(!subjectVal){ toast('请填写自定义科目'); return; }
+      }
+
+      const durVal = parseInt(val('f_duration'), 10) || 45;
+      const feeVal = Number(val('f_fee')) || 0;
+      const feeStdRaw = val('f_feeStd');
+      let feeStdText = '';
+      if(feeStdRaw !== '' && feeStdRaw !== '__custom__'){
+        const p = FEE_PRESETS[+feeStdRaw];
+        if(p) feeStdText = p.label;
+      } else if(feeStdRaw === '__custom__'){
+        feeStdText = '¥' + feeVal + ' / ' + durVal + '分钟';
+      }
+
+      const payload = {
+        name: nameVal,
+        subject: subjectVal,
+        day: normalizeDay(val('f_day')),
+        time: normalizeTime(val('f_time')),
+        duration: durVal,
+        timetableId: val('f_tt') || currentTtId,
+        fee: feeVal,
+        totalLessons: Number(val('f_total')) || 0,
+        discount: Number(val('f_discount')) || 0,
+        payAmount: Number(val('f_payAmount')) || 0,
+        payTimes: Number(val('f_payTimes')) || 1,
+        payDate: normalizeDate(val('f_payDate')) || ymd(new Date()),
+        payMethod: val('f_payMethod') || '微信',
+        startDate: normalizeDate(val('f_startDate')) || ymd(new Date()),
+        validMonths: Number(val('f_validMonths')) || 3,
+        note: (val('f_note') || '').trim(),
+        teacher: (val('f_teacher') || '').trim(),
+        feeStd: feeStdText
+      };
+
+      closeSheet();
+
+      try {
+        if(isEdit){
+          Object.assign(s, payload);
+        } else {
+          payload.id = uid();
+          DB.students.push(payload);
+        }
+        save();
+        renderSchedule();
+        renderStudents();
+        renderStats();
+        renderEnroll();
+        toast(isEdit ? '已保存' : '已添加学员');
+      } catch(err){
+        console.error('保存学生失败:', err);
+        toast('保存失败：' + (err && err.message ? err.message : '未知错误'));
+      }
+    });
+  }
+
+  const btnCancel = document.getElementById('btnCancelStudent');
+  if(btnCancel){
+    btnCancel.addEventListener('click', function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      closeSheet();
+    });
+  }
+
+  recalcPay();
+
+  setTimeout(function(){
+    const el = document.getElementById('f_name');
+    if(el && !isEdit) el.focus();
+  }, 200);
+}
+
+/* =========================================================
+   11. 课时统计
+   ========================================================= */
+function renderStatsSelect(){
+  const sel = $('#statsTtSel');
+  sel.innerHTML = DB.timetables.map(function(t){
+    return '<option value="' + t.id + '"' + (t.id === statsTtId ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+  }).join('');
+}
+
+let statsView = null; // {y, m, mode}  m: 0-11
+
+function monthLessonCount(s, y, m, fromStr){
+  // 学员在 y年m月(0-based) 中，日期 >= fromStr 的排课次数
+  const end = new Date(y, m+1, 0);
+  let cnt = 0;
+  for(let d = new Date(y, m, 1); d <= end; d = addDays(d, 1)){
+    const ds = ymd(d);
+    if(fromStr && ds < fromStr) continue;
+    if(weekdayOf(d) === s.day) cnt++;
+  }
+  return cnt;
+}
+
+function renderStats(){
+  renderStatsSelect();
+  if(!statsView){
+    const n = new Date();
+    statsView = { y: n.getFullYear(), m: n.getMonth(), mode: 'month' };
+  }
+
+  // 统计页包含已结课学员（保留历史课时数据）
+  const students = activeStudents().filter(s => s.timetableId === statsTtId);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const mEnd = new Date(now.getFullYear(), now.getMonth()+1, 0);
+  const msStr = ymd(mStart), meStr = ymd(mEnd);
+  const tomorrowStr = ymd(addDays(today, 1));
+
+  const stuIds = {};
+  students.forEach(function(s){ stuIds[s.id] = 1; });
+  const monthLessons = DB.lessons.filter(function(l){
+    return stuIds[l.studentId] && l.date >= msStr && l.date <= meStr;
+  });
+  const doneLessons = monthLessons.filter(l => l.status === '已上课');
+  const actual = doneLessons.reduce((a, l) => a + (Number(l.fee) || 0), 0);
+  const doneCount = doneLessons.reduce((a, l) => a + (Number(l.count) || 1), 0);
+
+  // 本月剩余预计（今天之后）
+  let expectCount = 0, expectIncome = 0;
+  students.forEach(function(s){
+    const cnt = monthLessonCount(s, now.getFullYear(), now.getMonth(), tomorrowStr);
+    expectCount += cnt;
+    expectIncome += cnt * (Number(s.fee) || 0);
+  });
+
+  // 本月实际上课人数
+  const attendedIds = {};
+  doneLessons.forEach(l => { attendedIds[l.studentId] = 1; });
+  const attendedCnt = Object.keys(attendedIds).length;
+
+  // 预警数据（点击卡片弹详情）
+  const lowLessons = [];
+  const expiring = [];
+  students.forEach(function(s){
+    const st = calcStats(s);
+    if(st.remain < 5) lowLessons.push({ s: s, st: st });
+    if(st.daysLeft <= 10) expiring.push({ s: s, st: st });
+  });
+  lowLessons.sort((a,b) => a.st.remain - b.st.remain);
+  expiring.sort((a,b) => a.st.daysLeft - b.st.daysLeft);
+
+  $('#statCards').innerHTML =
+    '<div class="stat-card"><div class="lb">本月预计总收入</div>' +
+      '<div class="vl b">¥' + (actual + expectIncome) + '</div>' +
+      '<div class="sub">剩余 ' + expectCount + ' 节 = ¥' + expectIncome + '</div></div>' +
+    '<div class="stat-card"><div class="lb">上课总人数</div>' +
+      '<div class="vl g">' + students.length + ' 人</div>' +
+      '<div class="sub">本月实际上课 ' + attendedCnt + ' 人</div></div>' +
+    '<div class="stat-card tap" id="cardLow"><div class="lb">⏰ 课时不足</div>' +
+      '<div class="vl" style="color:' + (lowLessons.length ? 'var(--red)' : '#a2a9b6') + ';">' + lowLessons.length + ' 人</div>' +
+      '<div class="sub">少于 5 节 · 点击查看</div></div>' +
+    '<div class="stat-card tap" id="cardExp"><div class="lb">📅 有效期临期</div>' +
+      '<div class="vl" style="color:' + (expiring.length ? 'var(--orange)' : '#a2a9b6') + ';">' + expiring.length + ' 人</div>' +
+      '<div class="sub">10 天内 · 点击查看</div></div>';
+
+  $('#cardLow').onclick = function(){
+    openMiniList('⏰ 课时不足（少于 5 节）', lowLessons.map(x => ({
+      name: x.s.name, subject: x.s.subject,
+      txt: '剩余 ' + x.st.remain + ' 节', cls: 'r'
+    })));
+  };
+  $('#cardExp').onclick = function(){
+    openMiniList('📅 有效期临期（10 天内）', expiring.map(x => ({
+      name: x.s.name, subject: x.s.subject,
+      txt: x.st.daysLeft < 0 ? ('已过期 ' + (-x.st.daysLeft) + ' 天') : ('剩 ' + x.st.daysLeft + ' 天'),
+      cls: x.st.daysLeft < 0 ? 'r' : 'o'
+    })));
+  };
+
+  renderStatsDetail(students);
+}
+
+function openMiniList(title, items){
+  let html = '<div class="sheet"><div class="sheet-title">' + title + '</div>';
+  if(!items.length){
+    html += '<div class="no-alert">暂无，一切正常 👍</div>';
+  } else {
+    items.forEach(it => {
+      html += '<div class="alert-item"><span class="nm">' + esc(it.name) + ' · ' + esc(it.subject) +
+              '</span><span class="vl ' + it.cls + '">' + it.txt + '</span></div>';
+    });
+  }
+  html += '<button class="wide-btn" data-act="close">关闭</button></div>';
+  showSheet(html, function(a){ if(a.value === 'close') a.close(); });
+}
+
+function renderStatsDetail(students){
+  const v = statsView;
+  const box = $('#statDetail');
+  const isYear = v.mode === 'year';
+  const title = isYear ? (v.y + ' 年') : (v.y + ' 年 ' + (v.m+1) + ' 月');
+
+  box.innerHTML = '<div class="d-nav">' +
+    '<button class="d-btn" id="dPrev">◀</button>' +
+    '<span class="d-title">' + title + '</span>' +
+    '<button class="d-btn" id="dNext">▶</button>' +
+    '<button class="d-btn d-mode" id="dMode">' + (isYear ? '按月' : '按年') + '</button>' +
+  '</div><div id="dBody"></div>';
+
+  $('#dPrev').onclick = function(){
+    if(isYear) v.y--; else { v.m--; if(v.m < 0){ v.m = 11; v.y--; } }
+    renderStatsDetail(students);
+  };
+  $('#dNext').onclick = function(){
+    if(isYear) v.y++; else { v.m++; if(v.m > 11){ v.m = 0; v.y++; } }
+    renderStatsDetail(students);
+  };
+  $('#dMode').onclick = function(){
+    v.mode = isYear ? 'month' : 'year';
+    renderStatsDetail(students);
+  };
+
+  const body = $('#dBody');
+  const stuIds = {};
+  students.forEach(function(s){ stuIds[s.id] = 1; });
+
+  // —— 当年 12 个月课费收入（柱形图数据） ——
+  const mInc = [], mCnt = [];
+  let maxInc = 0;
+  for(let m = 0; m < 12; m++){
+    const s1 = ymd(new Date(v.y, m, 1)), e1 = ymd(new Date(v.y, m+1, 0));
+    const mls = DB.lessons.filter(l => stuIds[l.studentId] && l.date >= s1 && l.date <= e1 && l.status === '已上课');
+    const c = mls.reduce((a,l)=>a+(Number(l.count)||1),0);
+    const inc = mls.reduce((a,l)=>a+(Number(l.fee)||0),0);
+    mCnt.push(c); mInc.push(inc);
+    if(inc > maxInc) maxInc = inc;
+  }
+
+  function fmtMoney(n){
+    if(n >= 10000) return (n/10000).toFixed(1) + 'w';
+    if(n >= 1000) return (n/1000).toFixed(1) + 'k';
+    return String(n);
+  }
+
+  function chartHtml(curMonth){
+    let bars = '';
+    for(let i = 0; i < 12; i++){
+      const inc = mInc[i];
+      const h = inc > 0 ? Math.max(6, Math.round(inc / maxInc * 100)) : 0;
+      bars += '<div class="bar-col' + (inc <= 0 ? ' zero' : '') + (curMonth === i ? ' cur' : '') + '" data-m="' + i + '">' +
+        '<div class="bar-val">' + (inc > 0 ? fmtMoney(inc) : '') + '</div>' +
+        '<div class="bar" style="height:' + (inc > 0 ? h + 'px' : '3px') + '"></div>' +
+        '<div class="bar-lb">' + (i+1) + '月</div></div>';
+    }
+    return '<div class="chart"><div class="chart-title">' + v.y + ' 年各月课费收入 · 点击柱子查看当月</div>' +
+      '<div class="chart-bars">' + bars + '</div></div>';
+  }
+
+  if(!isYear){
+    // —— 月模式：总上课节数 + 总课费 ——
+    const msStr = ymd(new Date(v.y, v.m, 1)), meStr = ymd(new Date(v.y, v.m+1, 0));
+    const done = DB.lessons.filter(l => stuIds[l.studentId] && l.date >= msStr && l.date <= meStr && l.status === '已上课');
+    const actual = done.reduce((a,l) => a + (Number(l.fee)||0), 0);
+    const doneCnt = done.reduce((a,l) => a + (Number(l.count)||1), 0);
+
+    const n = new Date();
+    const tomorrowStr = ymd(addDays(new Date(n.getFullYear(), n.getMonth(), n.getDate()), 1));
+    const isFuture = v.y > n.getFullYear() || (v.y === n.getFullYear() && v.m > n.getMonth());
+    const isCur = v.y === n.getFullYear() && v.m === n.getMonth();
+    const fromStr = isFuture ? msStr : (isCur ? tomorrowStr : null);
+    let expCnt = 0, expIncome = 0;
+    students.forEach(function(s){
+      if(!fromStr) return;
+      const c = monthLessonCount(s, v.y, v.m, fromStr);
+      expCnt += c; expIncome += c * (Number(s.fee)||0);
+    });
+
+    let t1v, t1l, t1s = '', t2v, t2l, t2s = '';
+    if(isFuture){
+      t1v = expCnt + ' 节'; t1l = '预计上课节数';
+      t2v = '¥' + expIncome; t2l = '预计课时收入';
+    } else {
+      t1v = doneCnt + ' 节'; t1l = '总上课节数';
+      t2v = '¥' + actual; t2l = '课费收入';
+      if(expCnt > 0){ t1s = '剩余预计 ' + expCnt + ' 节'; t2s = '剩余预计 ¥' + expIncome; }
+    }
+
+    body.innerHTML =
+      '<div class="d-tiles">' +
+        '<div class="d-tile"><div class="tv">' + t1v + '</div><div class="tl">' + t1l + '</div><div class="ts">' + t1s + '</div></div>' +
+        '<div class="d-tile"><div class="tv b">' + t2v + '</div><div class="tl">' + t2l + '</div><div class="ts">' + t2s + '</div></div>' +
+      '</div>' + chartHtml(v.m);
+  } else {
+    // —— 年模式：全年汇总 + 柱形图 ——
+    const yDone = mCnt.reduce((a,c)=>a+c,0);
+    const yActual = mInc.reduce((a,i)=>a+i,0);
+    body.innerHTML =
+      '<div class="d-tiles">' +
+        '<div class="d-tile"><div class="tv">' + yDone + ' 节</div><div class="tl">' + v.y + ' 年总节数</div><div class="ts"></div></div>' +
+        '<div class="d-tile"><div class="tv b">¥' + yActual + '</div><div class="tl">' + v.y + ' 年总收入</div><div class="ts"></div></div>' +
+      '</div>' + chartHtml(-1);
+  }
+
+  // 点击柱子跳转到对应月份
+  body.querySelectorAll('.bar-col').forEach(function(el){
+    el.onclick = function(){
+      v.m = +el.dataset.m; v.mode = 'month';
+      renderStatsDetail(students);
+    };
+  });
+}
+
+$('#statsTtSel').addEventListener('change', function(){
+  statsTtId = this.value;
+  renderStats();
+});
+
+/* =========================================================
+   12. 导出
+   ========================================================= */
+function buildReport(startStr, endStr, title, onlyStudentId){
+  const students = onlyStudentId
+    ? DB.students.filter(s => s.id === onlyStudentId)
+    : DB.students.slice();
+
+  const ids = {};
+  students.forEach(s => ids[s.id] = 1);
+
+  const all = DB.lessons.filter(function(l){
+    return ids[l.studentId] && l.date >= startStr && l.date <= endStr;
+  });
+
+  const done = all.filter(l => l.status === '已上课');
+  const leave = all.filter(l => l.status === '请假');
+  const absent = all.filter(l => l.status === '旷课');
+  const income = done.reduce((a, l) => a + (Number(l.fee) || 0), 0);
+  const sumCount = function(arr){ return arr.reduce((a,l)=>a+(Number(l.count)||1),0); };
+  const doneCnt = sumCount(done), leaveCnt = sumCount(leave), absentCnt = sumCount(absent);
+
+  let out = '';
+  out += title + '\n';
+  out += '在册学生 ' + students.length + ' 人 · 本期总上课 ' + doneCnt + '节（请假' +
+         leaveCnt + ' · 旷课 ' + absentCnt + '）\n';
+  out += '课时收入合计：¥' + income + '\n';
+  out += '上课明细：\n';
+
+  let idx = 0;
+  let hasAny = false;
+
+  students.forEach(function(s){
+    const mine = done.filter(l => l.studentId === s.id)
+                     .sort((a,b) => a.date < b.date ? -1 : 1);
+    if(!mine.length) return;
+    hasAny = true;
+    out += s.name + ' ' + s.subject + '：' + sumCount(mine) + '节\n';
+    mine.forEach(function(l, i){
+      idx++;
+      out += idx + '. ' + fmtDateCN(l.date) + '  ' + s.time +
+             ((Number(l.count)||1) !== 1 ? '  ×' + fmtCount(l.count) : '') + '\n';
+    });
+  });
+  if(!hasAny) out += '（本期无已上课记录）\n';
+
+  if(leave.length || absent.length){
+    out += '请假·旷课学员：\n';
+    const groups = {};
+    leave.concat(absent).forEach(function(l){
+      (groups[l.studentId] = groups[l.studentId] || []).push(l);
+    });
+    Object.keys(groups).forEach(function(sid){
+      const s = DB.students.find(x => x.id === sid);
+      if(!s) return;
+      out += s.name + '\n';
+      groups[sid].sort((a,b) => a.date < b.date ? -1 : 1).forEach(function(l){
+        idx++;
+        out += idx + '. ' + fmtDateCN(l.date) + ' ' + l.status + '\n';
+      });
+    });
+  }
+
+  return { text: out, done: done, leave: leave, absent: absent, income: income };
+}
+
+function textToCanvas(text){
+  const W = 720, PAD = 30, FS = 21, LH = 34;
+  const dpr = 2;
+  const cv = document.createElement('canvas');
+  const ctx = cv.getContext('2d');
+  ctx.font = FS + 'px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+
+  const rawLines = String(text).split('\n');
+  const lines = [];
+  rawLines.forEach(function(line){
+    if(line === ''){ lines.push(''); return; }
+    let cur = '';
+    for(let i = 0; i < line.length; i++){
+      const ch = line[i];
+      if(ctx.measureText(cur + ch).width > W - PAD * 2 && cur !== ''){
+        lines.push(cur); cur = ch;
+      } else {
+        cur += ch;
+      }
+    }
+    lines.push(cur);
+  });
+
+  const H = PAD * 2 + lines.length * LH + 10;
+  cv.width = W * dpr;
+  cv.height = H * dpr;
+  cv.style.width = W + 'px';
+  cv.style.height = H + 'px';
+
+  ctx.scale(dpr, dpr);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  const grad = ctx.createLinearGradient(0, 0, W, 0);
+  grad.addColorStop(0, '#4f46e5');
+  grad.addColorStop(1, '#6366f1');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, 6);
+
+  ctx.fillStyle = '#1f2937';
+  ctx.font = FS + 'px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.textBaseline = 'top';
+
+  let y = PAD + 6;
+  lines.forEach(function(line, i){
+    const isTitle = (i === 0);
+    const isHead = /^(上课明细|请假·旷课学员)：$/.test(line);
+    ctx.font = (isTitle ? 'bold ' + (FS + 5) : (isHead ? 'bold ' + FS : FS)) +
+               'px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillStyle = isTitle ? '#4f46e5' : (isHead ? '#374151' : '#374151');
+    ctx.fillText(line, PAD, y);
+    y += LH;
+  });
+
+  return cv;
+}
+
+function openImagePreview(cv, filename){
+  const url = cv.toDataURL('image/png');
+  const html =
+    '<div class="sheet">' +
+      '<div class="sheet-title">图片预览</div>' +
+      '<div class="sheet-sub">长按图片可保存到手机相册</div>' +
+      '<div style="max-height:62vh;overflow-y:auto;border-radius:12px;border:1px solid #e8ebf0;">' +
+        '<img src="' + url + '" style="width:100%;display:block;"/>' +
+      '</div>' +
+      '<a class="wide-btn primary" href="' + url + '" download="' + esc(filename) + '" ' +
+        'style="text-align:center;text-decoration:none;display:block;margin-top:12px;">保存图片</a>' +
+      '<button class="wide-btn" data-act="close">关闭</button>' +
+    '</div>';
+  showSheet(html, function(a){
+    if(a.value === 'close') a.close();
+  });
+}
+
+function downloadFile(filename, content, mime){
+  try {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 400);
+    return true;
+  } catch(e){
+    return false;
+  }
+}
+
+function copyText(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(text).then(function(){ return true; }).catch(function(){ return fallbackCopy(text); });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+function fallbackCopy(text){
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch(e){ return false; }
+}
+
+function openExportDialog(presetStudentId){
+  const now = new Date();
+  const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const mEnd = new Date(now.getFullYear(), now.getMonth()+1, 0);
+
+  let range = 'month';
+  let fmt = 'text';
+  let startStr = ymd(mStart);
+  let endStr = ymd(mEnd);
+
+  const html =
+    '<div class="sheet">' +
+      '<div class="sheet-title">导出课时记录</div>' +
+      '<div class="sheet-sub">支持按月 / 按周 / 自定义时段</div>' +
+      '<div class="seg" id="expRange">' +
+        '<button data-r="month" class="on">按月</button>' +
+        '<button data-r="week">按周</button>' +
+        '<button data-r="custom">自定义</button>' +
+      '</div>' +
+      '<div class="date-row">' +
+        '<input type="date" id="expStart" value="' + startStr + '"/>' +
+        '<span>至</span>' +
+        '<input type="date" id="expEnd" value="' + endStr + '"/>' +
+      '</div>' +
+      '<div class="seg" id="expFmt">' +
+        '<button data-f="text" class="on">文本</button>' +
+        '<button data-f="image">图片</button>' +
+        '<button data-f="csv">Excel</button>' +
+      '</div>' +
+      '<div id="expPreviewBox"><pre class="preview" id="expPreview"></pre></div>' +
+      '<div class="btn-row">' +
+        '<button class="wide-btn primary" data-act="copy">复制文本</button>' +
+        '<button class="wide-btn ghost" data-act="save">保存文件</button>' +
+      '</div>' +
+      '<button class="wide-btn" data-act="close">关闭</button>' +
+    '</div>';
+
+  let currentText = '';
+  let currentCv = null;
+  let currentTitle = '';
+
+  const ref = showSheet(html, function(a){
+    if(a.value === 'close'){ a.close(); return; }
+    if(a.value === 'copy'){
+      copyText(currentText).then(function(ok){
+        toast(ok ? '已复制到剪贴板' : '复制失败，请长按文本手动复制');
+      });
+      return;
+    }
+    if(a.value === 'save'){
+      if(fmt === 'image'){
+        if(currentCv) openImagePreview(currentCv, currentTitle + '.png');
+      } else if(fmt === 'csv'){
+        const csv = buildCSV(startStr, endStr, presetStudentId);
+        const ok = downloadFile(currentTitle + '.csv', csv, 'text/csv;charset=utf-8');
+        if(!ok) toast('保存失败，请复制文本');
+        else toast('已保存 CSV 文件');
+      } else {
+        const ok = downloadFile(currentTitle + '.txt', currentText, 'text/plain;charset=utf-8');
+        if(!ok) toast('保存失败，请复制文本');
+        else toast('已保存 TXT 文件');
+      }
+    }
+  });
+
+  const root = ref.el;
+
+  function refresh(){
+    const s1 = root.querySelector('#expStart').value || startStr;
+    const s2 = root.querySelector('#expEnd').value || endStr;
+    startStr = s1; endStr = s2;
+
+    let title;
+    if(range === 'month'){
+      const d = parseYmd(startStr);
+      title = '课时月报：' + d.getFullYear() + '年' + (d.getMonth()+1) + '月';
+    } else if(range === 'week'){
+      title = '课时周报：' + startStr + ' 至 ' + endStr;
+    } else {
+      title = '课时记录：' + startStr + ' 至 ' + endStr;
+    }
+    if(presetStudentId){
+      const s = DB.students.find(x => x.id === presetStudentId);
+      title = (s ? s.name + ' ' : '') + title;
+    }
+    currentTitle = title;
+
+    const rep = buildReport(startStr, endStr, title, presetStudentId);
+    currentText = rep.text;
+
+    const box = root.querySelector('#expPreviewBox');
+    if(fmt === 'image'){
+      currentCv = textToCanvas(rep.text);
+      box.innerHTML = '<div class="preview" style="padding:10px;"><img src="' + currentCv.toDataURL('image/png') +
+                      '" style="width:100%;border-radius:8px;display:block;"/></div>';
+    } else if(fmt === 'csv'){
+      currentCv = null;
+      const csv = buildCSV(startStr, endStr, presetStudentId);
+      box.innerHTML = '<pre class="preview">' + esc(csv.split('\r\n').slice(0, 30).join('\n')) +
+                      (csv.split('\r\n').length > 30 ? '\n…（共 ' + (csv.split('\r\n').length - 1) + ' 行）' : '') + '</pre>';
+    } else {
+      currentCv = null;
+      box.innerHTML = '<pre class="preview" id="expPreview">' + esc(rep.text) + '</pre>';
+    }
+  }
+
+  function setRangeDates(){
+    const n = new Date();
+    if(range === 'month'){
+      startStr = ymd(new Date(n.getFullYear(), n.getMonth(), 1));
+      endStr = ymd(new Date(n.getFullYear(), n.getMonth()+1, 0));
+    } else if(range === 'week'){
+      startStr = ymd(mondayOf(n));
+      endStr = ymd(addDays(mondayOf(n), 6));
+    }
+    root.querySelector('#expStart').value = startStr;
+    root.querySelector('#expEnd').value = endStr;
+  }
+
+  root.querySelector('#expRange').addEventListener('click', function(e){
+    const b = e.target.closest('button[data-r]');
+    if(!b) return;
+    $$('#expRange button', root).forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    range = b.dataset.r;
+    if(range !== 'custom') setRangeDates();
+    refresh();
+  });
+
+  root.querySelector('#expFmt').addEventListener('click', function(e){
+    const b = e.target.closest('button[data-f]');
+    if(!b) return;
+    $$('#expFmt button', root).forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    fmt = b.dataset.f;
+    refresh();
+  });
+
+  root.querySelector('#expStart').addEventListener('change', refresh);
+  root.querySelector('#expEnd').addEventListener('change', refresh);
+
+  refresh();
+}
+
+function buildCSV(startStr, endStr, onlyStudentId){
+  const rows = [];
+  rows.push(['日期', '星期', '学生', '科目', '状态', '课时费', '课表']);
+
+  const students = onlyStudentId
+    ? DB.students.filter(s => s.id === onlyStudentId)
+    : DB.students.slice();
+  const ids = {};
+  students.forEach(s => ids[s.id] = 1);
+
+  const list = DB.lessons.filter(function(l){
+    return ids[l.studentId] && l.date >= startStr && l.date <= endStr;
+  }).sort(function(a, b){ return a.date < b.date ? -1 : 1; });
+
+  list.forEach(function(l){
+    const s = DB.students.find(x => x.id === l.studentId);
+    if(!s) return;
+    const tt = DB.timetables.find(t => t.id === l.timetableId);
+    const d = parseYmd(l.date);
+    rows.push([
+      l.date,
+      '周' + WEEK_CN[(d.getDay()+6)%7],
+      s.name,
+      s.subject,
+      l.status,
+      l.status === '已上课' ? (Number(l.fee) || 0) : 0,
+      tt ? tt.name : ''
+    ]);
+  });
+
+  return '\ufeff' + rows.map(function(r){
+    return r.map(function(c){
+      return '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"';
+    }).join(',');
+  }).join('\r\n');
+}
+
+function exportStudentDetail(sid, status){
+  const s = DB.students.find(x => x.id === sid);
+  if(!s) return;
+  /* status 可传单个字符串（'已上课'/'请假'/'旷课'）或数组（['请假','旷课'] = 缺勤明细） */
+  const statuses = Array.isArray(status) ? status : [status];
+  const list = DB.lessons.filter(l => l.studentId === sid && statuses.indexOf(l.status) >= 0)
+                         .sort((a,b) => a.date < b.date ? -1 : 1);
+  const label = statuses.length > 1 ? '缺勤' : (status === '已上课' ? '上课' : status);
+  const totalCnt = list.reduce((a,l)=>a+(Number(l.count)||1),0);
+  let txt = s.name + ' · ' + s.subject + ' · ' + label + '明细\n';
+  txt += '共 ' + totalCnt + ' 节（' + list.length + ' 条记录）';
+  if(statuses.length === 1 && status === '已上课'){
+    txt += ' · 课时费合计 ¥' + list.reduce((a,l) => a + (Number(l.fee)||0), 0);
+  }
+  txt += '\n';
+  if(statuses.length > 1){
+    /* 合并模式：分别写出每种状态的次数 */
+    txt += statuses.map(function(st){
+      const sub = list.filter(l => l.status === st);
+      return st + ' ' + sub.reduce((a,l)=>a+(Number(l.count)||1),0) + ' 节（' + sub.length + ' 条）';
+    }).join(' · ') + '\n';
+  }
+  txt += '————————————\n';
+  if(!list.length){
+    txt += '（暂无记录）\n';
+  } else {
+    list.forEach(function(l, i){
+      txt += (i+1) + '. ' + fmtDateCN(l.date) + '  ' + l.status +
+             ((Number(l.count)||1) !== 1 ? ' ×' + fmtCount(l.count) : '') +
+             (l.status === '已上课' ? '  ¥' + (l.fee||0) : '') + '\n';
+    });
+  }
+  txt += '————————————\n导出时间：' + ymd(new Date()) + '\n';
+
+  const cv = textToCanvas(txt);
+  const html =
+    '<div class="sheet">' +
+      '<div class="sheet-title">' + esc(s.name) + ' · ' + esc(label) + '明细</div>' +
+      '<div class="sheet-sub">共 ' + list.length + ' 条记录</div>' +
+      '<div style="max-height:56vh;overflow-y:auto;border-radius:12px;border:1px solid #e8ebf0;margin-bottom:12px;">' +
+        '<img src="' + cv.toDataURL('image/png') + '" style="width:100%;display:block;"/>' +
+      '</div>' +
+      '<a class="wide-btn primary" href="' + cv.toDataURL('image/png') + '" download="' +
+        esc(s.name + '_' + label + '明细.png') + '" style="text-align:center;text-decoration:none;display:block;">保存图片</a>' +
+      '<button class="wide-btn ghost" data-act="copy">复制文本</button>' +
+      '<button class="wide-btn ghost" data-act="csv">导出 Excel（CSV）</button>' +
+      '<button class="wide-btn" data-act="close">关闭</button>' +
+    '</div>';
+
+  showSheet(html, function(a){
+    if(a.value === 'copy'){
+      copyText(txt).then(function(ok){ toast(ok ? '已复制' : '复制失败'); });
+    } else if(a.value === 'csv'){
+      const rows = [['日期', '星期', '学生', '科目', '状态', '课时费']];
+      list.forEach(function(l){
+        const d = parseYmd(l.date);
+        rows.push([l.date, '周' + WEEK_CN[(d.getDay()+6)%7], s.name, s.subject, l.status,
+                   l.status === '已上课' ? (l.fee||0) : 0]);
+      });
+      const csv = '\ufeff' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\r\n');
+      const ok = downloadFile(s.name + '_' + label + '明细.csv', csv, 'text/csv;charset=utf-8');
+      toast(ok ? '已保存 CSV' : '保存失败，请复制文本');
+    } else if(a.value === 'close'){
+      a.close();
+    }
+  });
+}
+
+$('#btnExport').addEventListener('click', function(){ openExportDialog(null); });
+
+/* =========================================================
+   12.5 交费凭证 & 结课凭证（预览后可存到手机，不再占软件存储）
+   ========================================================= */
+
+// —— 结课凭证 ——
+function openCompleteDialog(sid){
+  const s = DB.students.find(x => x.id === sid);
+  if(!s) return;
+  const st = calcStats(s);
+  const remain = st.remain;
+  const done = st.done;
+  const total = s.totalLessons || 0;
+  const perLesson = total > 0 ? (s.payAmount || 0) / total : 0;
+  const refund = Math.round(remain * perLesson * 100) / 100;
+  const today = ymd(new Date());
+
+  const channelOpts = ['微信','支付宝','银行卡','现金','其他'].map(function(c){
+    return '<option value="' + c + '"' + (c === '微信' ? ' selected' : '') + '>' + c + '</option>';
+  }).join('');
+
+  const baseRefund = refund; // 剩余课时折算金额（未扣手续费）
+  const html =
+    '<div class="sheet">' +
+      '<div class="sheet-title">🎓 结课凭证</div>' +
+      '<div class="sheet-sub">' + esc(s.name) + ' · ' + esc(s.subject) + '</div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>已上课时</label><input type="text" value="' + done + ' 节" readonly class="ro-input"/></div>' +
+        '<div class="form-row"><label>剩余课时</label><input type="text" value="' + remain + ' 节" readonly class="ro-input"/></div>' +
+      '</div>' +
+      '<div class="form-row"><label>剩余课时折算金额（元）</label><input type="text" value="' + baseRefund + '" readonly class="ro-input"/></div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>手续费（元）</label><input type="number" id="c_serviceFee" value="0" min="0" step="0.01"/></div>' +
+        '<div class="form-row"><label>应退金额（元）</label><input type="number" id="c_refund" value="' + refund + '" min="0" step="0.01"/></div>' +
+      '</div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>退费日期</label><input type="date" id="c_refundDate" value="' + today + '"/></div>' +
+        '<div class="form-row"><label>退费渠道</label><select id="c_channel">' + channelOpts + '</select></div>' +
+      '</div>' +
+      '<div class="form-row"><label>备注</label><textarea id="c_note" placeholder="如：学员因个人原因提前结课…">' + esc(s.completeNote || '') + '</textarea></div>' +
+      '<button class="wide-btn primary" id="c_preview">👁️ 预览结课凭证</button>' +
+      '<button class="wide-btn" data-act="close">关闭</button>' +
+    '</div>';
+
+  const ref = showSheet(html);
+  function bindCClose(){
+    const c = ref.el.querySelector('[data-act="close"]');
+    if(c) c.onclick = function(){ ref.close(); };
+  }
+  function reattachCX(){
+    const sheetEl = ref.el.querySelector('.sheet');
+    if(sheetEl && !sheetEl.querySelector('.sheet-x')){
+      const x = document.createElement('button');
+      x.className = 'sheet-x';
+      x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      x.onclick = function(){ ref.close(); };
+      sheetEl.appendChild(x);
+    }
+  }
+  bindCClose();
+
+  // 手续费联动：应退金额 = 剩余课时折算 - 手续费
+  const sfEl = document.getElementById('c_serviceFee');
+  const rfEl = document.getElementById('c_refund');
+  if(sfEl && rfEl){
+    sfEl.addEventListener('input', function(){
+      const sf = Number(sfEl.value) || 0;
+      rfEl.value = Math.max(0, Math.round((baseRefund - sf) * 100) / 100);
+    });
+  }
+
+  const pv = document.getElementById('c_preview');
+  if(pv) pv.onclick = function(){
+    const d = {
+      name: s.name, subject: s.subject, teacher: s.teacher || '',
+      done: done, remain: remain, total: total,
+      baseRefund: baseRefund,
+      serviceFee: Number(document.getElementById('c_serviceFee').value) || 0,
+      refund: document.getElementById('c_refund').value,
+      refundDate: document.getElementById('c_refundDate').value,
+      channel: document.getElementById('c_channel').value,
+      note: (document.getElementById('c_note').value || '').trim(),
+      date: today
+    };
+    const img = drawCompleteCert(d);
+    const prevHtml =
+      '<div class="sheet" style="max-width:560px;">' +
+        '<div class="sheet-title">结课凭证预览</div>' +
+        '<img src="' + img + '" style="width:100%;border-radius:10px;display:block;border:1px solid #eee;"/>' +
+        '<button class="wide-btn primary" id="cSave" style="margin-top:12px;">✅ 确认结课</button>' +
+        '<div style="display:flex;gap:8px;margin-top:8px;">' +
+          '<button class="wide-btn primary" id="cSaveImg" style="margin:0;">💾 保存到手机</button>' +
+          '<button class="wide-btn ghost" id="cBack" style="margin:0;">返回修改</button>' +
+        '</div>' +
+        '<button class="wide-btn" data-act="close" style="margin-top:8px;">关闭</button>' +
+      '</div>';
+    ref.el.innerHTML = prevHtml;
+    reattachCX();
+    bindCClose();
+    document.getElementById('cSaveImg').onclick = function(){
+      saveImageToDevice(img, '结课凭证_' + s.name);
+    };
+    document.getElementById('cSave').onclick = function(){
+      s.completed = true;
+      s.completedAt = today;
+      s.completeNote = d.note;
+      s.completeServiceFee = d.serviceFee;
+      s.completeRefund = Number(d.refund) || 0;
+      // 删除结课日期之后的排课记录（保留之前的用于统计）
+      const before = DB.lessons.length;
+      DB.lessons = DB.lessons.filter(function(l){
+        return !(l.studentId === s.id && l.date > today);
+      });
+      const removed = before - DB.lessons.length;
+      save();
+      renderSchedule(); renderStudents(); renderStats(); renderEnroll();
+      toast('已结课' + (removed > 0 ? '，已清理 ' + removed + ' 条未来排课' : ''));
+      ref.close();
+    };
+    document.getElementById('cBack').onclick = function(){
+      ref.el.innerHTML = html;
+      reattachCX();
+      bindCClose();
+      const sf2 = document.getElementById('c_serviceFee');
+      const rf2 = document.getElementById('c_refund');
+      if(sf2 && rf2){
+        sf2.addEventListener('input', function(){
+          const sf = Number(sf2.value) || 0;
+          rf2.value = Math.max(0, Math.round((baseRefund - sf) * 100) / 100);
+        });
+      }
+      const p = document.getElementById('c_preview');
+      if(p) p.onclick = pv.onclick;
+    };
+  };
+}
+
+// —— 绘制结课凭证 ——
+function drawCompleteCert(d){
+  const W = 750, pad = 40;
+  const rows = [
+    ['学员姓名', d.name],
+    ['学习科目', d.subject],
+    ['上课老师', d.teacher || '—'],
+    ['已上课时', d.done + ' 节'],
+    ['剩余课时', d.remain + ' 节'],
+    ['剩余课时折算', '¥' + (d.baseRefund != null ? d.baseRefund : d.refund)],
+    ['手续费', '¥' + (d.serviceFee || 0)],
+    ['应退金额', '¥' + d.refund],
+    ['退费日期', d.refundDate],
+    ['退费渠道', d.channel]
+  ];
+  const noteH = d.note ? 80 : 0;
+  const H = pad*2 + 90 + rows.length*34 + noteH + 60;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = '#059669'; ctx.lineWidth = 4;
+  ctx.strokeRect(20,20,W-40,H-40);
+  ctx.fillStyle = '#059669'; ctx.font = 'bold 34px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('咪卡音乐培训学校', W/2, pad+36);
+  ctx.fillStyle = '#1f2937'; ctx.font = 'bold 28px sans-serif';
+  ctx.fillText('结 课 凭 证', W/2, pad+78);
+  ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad,pad+96); ctx.lineTo(W-pad,pad+96); ctx.stroke();
+  ctx.textAlign = 'left'; ctx.font = '20px sans-serif';
+  let y = pad + 124;
+  rows.forEach(function(r){
+    ctx.fillStyle = '#6b7280'; ctx.fillText(r[0], pad, y);
+    ctx.fillStyle = '#1f2937'; ctx.textAlign = 'right'; ctx.fillText(String(r[1]), W-pad, y);
+    ctx.textAlign = 'left'; y += 34;
+  });
+  if(d.note){
+    ctx.fillStyle = '#6b7280'; ctx.fillText('备注', pad, y+6);
+    ctx.fillStyle = '#1f2937'; ctx.font = '18px sans-serif';
+    ctx.textAlign = 'left';
+    const words = d.note.match(/.{1,26}/g) || [d.note];
+    words.slice(0,3).forEach(function(line,i){
+      ctx.fillText(line, pad+70, y+6+i*26);
+    });
+    ctx.font = '20px sans-serif';
+  }
+  ctx.fillStyle = '#9ca3af'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('开具日期：' + d.date, W/2, H-pad);
+  return cv.toDataURL('image/jpeg', 0.92);
+}
+
+// —— 保存图片到设备（浏览器下载 / APK 提示长按） ——
+function saveImageToDevice(dataUrl, name){
+  if(inPlus()){
+    try{
+      plus.runtime.openURL(dataUrl);
+      toast('图片已打开，请长按保存');
+      return;
+    }catch(e){}
+  }
+  try{
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = (name || 'image') + '.jpg';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ if(a.parentNode) a.parentNode.removeChild(a); }, 100);
+    toast('已开始下载');
+  }catch(e){
+    const w = window.open();
+    w.document.write('<img src="' + dataUrl + '" style="max-width:100%;"/>');
+    toast('请长按图片保存');
+  }
+}
+
+// —— 交费凭证编辑器 ——
+function openReceiptEditor(sid){
+  const s = DB.students.find(x => x.id === sid);
+  if(!s) return;
+  const st = calcStats(s);
+  const receivable = (s.fee||0) * (s.totalLessons||0);
+
+  const html =
+    '<div class="sheet">' +
+      '<div class="sheet-title">🧾 交费凭证</div>' +
+      '<div class="sheet-sub">信息可修改，确认后预览生成图片</div>' +
+      '<div class="form-row"><label>学校名称</label><input type="text" id="r_school" value="咪卡音乐培训学校"/></div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>学员姓名</label><input type="text" id="r_name" value="' + esc(s.name) + '"/></div>' +
+        '<div class="form-row"><label>学习科目</label><input type="text" id="r_subject" value="' + esc(s.subject) + '"/></div>' +
+      '</div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>交费日期</label><input type="date" id="r_payDate" value="' + esc(s.payDate) + '"/></div>' +
+        '<div class="form-row"><label>上课老师</label><input type="text" id="r_teacher" value="' + esc(s.teacher || '') + '"/></div>' +
+      '</div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>排课时间</label><input type="text" id="r_time" value="周' + WEEK_CN[s.day-1] + ' ' + esc(s.time) + '（' + s.duration + '分钟）"/></div>' +
+        '<div class="form-row"><label>交费方式</label><input type="text" id="r_payMethod" value="' + esc(s.payMethod) + '"/></div>' +
+      '</div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>课时单价（元）</label><input type="number" id="r_fee" value="' + s.fee + '"/></div>' +
+        '<div class="form-row"><label>报课节数</label><input type="number" id="r_total" value="' + s.totalLessons + '"/></div>' +
+      '</div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>应收金额（元）</label><input type="number" id="r_receivable" value="' + receivable + '"/></div>' +
+        '<div class="form-row"><label>优惠金额（元）</label><input type="number" id="r_discount" value="' + (s.discount||0) + '"/></div>' +
+      '</div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>报名次数</label><input type="number" id="r_payTimes" value="' + s.payTimes + '"/></div>' +
+        '<div class="form-row"><label>实际交费（元）</label><input type="number" id="r_payAmount" value="' + s.payAmount + '"/></div>' +
+      '</div>' +
+      '<div class="form-grid2">' +
+        '<div class="form-row"><label>有效期起</label><input type="date" id="r_start" value="' + esc(s.startDate) + '"/></div>' +
+        '<div class="form-row"><label>有效期止</label><input type="date" id="r_end" value="' + st.endStr + '"/></div>' +
+      '</div>' +
+      '<div class="form-row"><label>备注（显示在凭证底部）</label><textarea id="r_note" placeholder="可填写备注信息，将显示在凭证底部">' + esc(s.note || '') + '</textarea></div>' +
+      '<button class="wide-btn primary" id="r_preview">👁️ 预览生成图片</button>' +
+      '<button class="wide-btn" data-act="close">关闭</button>' +
+    '</div>';
+
+  const ref = showSheet(html);
+  bindEditorClose();
+
+  function bindEditorClose(){
+    const c = ref.el.querySelector('[data-act="close"]');
+    if(c) c.onclick = function(){ ref.close(); };
+  }
+  function reattachX(){
+    const sheetEl = ref.el.querySelector('.sheet');
+    if(sheetEl && !sheetEl.querySelector('.sheet-x')){
+      const x = document.createElement('button');
+      x.className = 'sheet-x';
+      x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      x.onclick = function(){ ref.close(); };
+      sheetEl.appendChild(x);
+    }
+  }
+
+  const pv = document.getElementById('r_preview');
+  if(pv) pv.onclick = function(){
+    const d = {
+      school: val('r_school'), name: val('r_name'), subject: val('r_subject'),
+      payDate: val('r_payDate'), teacher: val('r_teacher'), time: val('r_time'),
+      payMethod: val('r_payMethod'), fee: val('r_fee'), total: val('r_total'),
+      receivable: val('r_receivable'), discount: val('r_discount'),
+      payTimes: val('r_payTimes'), payAmount: val('r_payAmount'),
+      start: val('r_start'), end: val('r_end'),
+      note: (val('r_note') || '').trim()
+    };
+    const img = drawReceipt(d);
+    const prevHtml =
+      '<div class="sheet" style="max-width:560px;">' +
+        '<div class="sheet-title">交费凭证预览</div>' +
+        '<img id="rPrevImg" src="' + img + '" style="width:100%;border-radius:10px;display:block;border:1px solid #eee;"/>' +
+        '<div style="display:flex;gap:8px;margin-top:12px;">' +
+          '<button class="wide-btn primary" id="rSave" style="margin:0;">💾 保存到手机</button>' +
+          '<button class="wide-btn ghost" id="rBack" style="margin:0;">返回修改</button>' +
+        '</div>' +
+        '<button class="wide-btn" data-act="close" style="margin-top:8px;">关闭</button>' +
+      '</div>';
+    ref.el.innerHTML = prevHtml;
+    reattachX();
+    bindEditorClose();
+    document.getElementById('rSave').onclick = function(){
+      saveImageToDevice(img, '交费凭证_' + s.name);
+    };
+    document.getElementById('rBack').onclick = function(){
+      ref.el.innerHTML = html;
+      reattachX();
+      bindEditorClose();
+      const p = document.getElementById('r_preview');
+      if(p) p.onclick = pv.onclick;
+    };
+  };
+  function val(id){ const el = document.getElementById(id); return el ? el.value : ''; }
+}
+
+// —— 绘制交费凭证为 Canvas 图片 ——
+function drawReceipt(d){
+  const W = 750, pad = 40;
+  const lineH = 34;
+  const rows = [
+    ['学员姓名', d.name],
+    ['学习科目', d.subject],
+    ['上课老师', d.teacher || '—'],
+    ['排课时间', d.time],
+    ['课时单价', '¥' + d.fee + ' / 节'],
+    ['报课节数', d.total + ' 节'],
+    ['报名次数', d.payTimes + ' 次'],
+    ['应收金额', '¥' + d.receivable],
+    ['优惠金额', '¥' + (d.discount || 0)],
+    ['实际交费', '¥' + d.payAmount],
+    ['交费方式', d.payMethod],
+    ['交费日期', d.payDate],
+    ['课程有效期', d.start + ' 至 ' + d.end]
+  ];
+  const noteLines = d.note ? (d.note.match(/.{1,26}/g) || [d.note]).slice(0,4) : [];
+  const noteH = noteLines.length * 28;
+  const H = pad*2 + 90 + rows.length*lineH + noteH + 30;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  // 背景
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+  // 边框
+  ctx.strokeStyle = '#4f46e5';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(20, 20, W-40, H-40);
+  // 标题
+  ctx.fillStyle = '#4f46e5';
+  ctx.font = 'bold 34px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(d.school, W/2, pad+36);
+  ctx.fillStyle = '#1f2937';
+  ctx.font = 'bold 28px sans-serif';
+  ctx.fillText('交 费 凭 证', W/2, pad+78);
+  // 分隔线
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad, pad+96); ctx.lineTo(W-pad, pad+96);
+  ctx.stroke();
+  // 明细行
+  ctx.textAlign = 'left';
+  ctx.font = '20px sans-serif';
+  let y = pad + 124;
+  rows.forEach(function(r, i){
+    ctx.fillStyle = '#6b7280';
+    ctx.fillText(r[0], pad, y);
+    ctx.fillStyle = '#1f2937';
+    ctx.textAlign = 'right';
+    ctx.fillText(String(r[1]), W-pad, y);
+    ctx.textAlign = 'left';
+    y += lineH;
+  });
+  // 备注
+  if(noteLines.length){
+    y += 6;
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W-pad, y); ctx.stroke();
+    y += 24;
+    ctx.fillStyle = '#6b7280'; ctx.font = '18px sans-serif';
+    ctx.fillText('备注', pad, y);
+    ctx.fillStyle = '#1f2937';
+    noteLines.forEach(function(line){
+      ctx.fillText(line, pad+64, y);
+      y += 28;
+    });
+  }
+  return cv.toDataURL('image/jpeg', 0.92);
+}
+
+/* =========================================================
+   13. 设置
+   ========================================================= */
+$('#setReset').addEventListener('click', function(){
+  confirmBox('清空全部数据',
+    '将删除<span style="color:#ef4444;font-weight:600;">所有数据</span>：<br>学员、课时记录、课表、结课信息。<br>清空后为空白状态，此操作不可恢复！',
+    '确定清空', function(){
+      DB = { version:4, timetables:[{ id:'tt_default', name:'我的课表', isDefault:true }], students:[], lessons:[] };
+      currentTtId = DB.timetables[0].id;
+      statsTtId = currentTtId;
+      currentWeek = mondayOf(new Date());
+      save();
+      renderSchedule(); renderStudents(); renderStats(); renderEnroll();
+      toast('已清空全部数据');
+    });
+});
+
+$('#setBackup').addEventListener('click', openBackupManager);
+$('#setRestoreData').addEventListener('click', openRestoreChooser);
+$('#setUnlic').addEventListener('click', regClearLicense);
+
+// 关于页：电话复制 + 注册信息
+var aboutPhone = document.getElementById('aboutPhone');
+if(aboutPhone) aboutPhone.addEventListener('click', function(){
+  copyText(aboutPhone.textContent).then(function(ok){ toast(ok ? '已复制手机号' : '复制失败'); });
+});
+
+function loadAboutLic(){
+  var st = document.getElementById('licStatus');
+  var dt = document.getElementById('licRegDate');
+  var dc = document.getElementById('licDevCode');
+  if(!st) return;
+  regGetDeviceCode().then(function(code){
+    if(dc) dc.textContent = code;
+  }).catch(function(){});
+  regIsLicensed().then(function(lic){
+    if(!st) return;
+    if(lic){
+      st.innerHTML = '<span style="color:#10b981;font-weight:700;">✓ 已注册</span>';
+      var stored = regReadStore();
+      try{
+        var o = JSON.parse(stored);
+        if(o && o.ts && dt) dt.textContent = ymd(new Date(o.ts)) + ' ' + new Date(o.ts).toTimeString().slice(0,5);
+      }catch(e){}
+    } else {
+      st.innerHTML = '<span style="color:#ef4444;">未注册</span>';
+      if(dt) dt.textContent = '—';
+    }
+  }).catch(function(){ if(st) st.textContent = '—'; });
+}
+
+/* =========================================================
+   14. 导航 & 初始化
+   ========================================================= */
+const PAGE_TITLE = {
+  schedule: '上课课表',
+  students: '学生管理',
+  enroll: '报名结课',
+  stats: '课时统计',
+  recycle: '回收站',
+  settings: '设置'
+};
+
+function switchPage(name){
+  activePage = name;
+  $$('.page').forEach(p => p.classList.remove('active'));
+  const el = $('#page-' + name);
+  if(el) el.classList.add('active');
+
+  $$('.dr-item').forEach(b => b.classList.toggle('active', b.dataset.page === name));
+
+  if(name === 'schedule'){
+    updateTitle();
+    var caret = $('#pageTitle .caret');
+    if(caret) caret.style.display = '';
+    $('#btnAction').style.display = '';
+    $('#btnAction').textContent = '＋';
+    renderSchedule();
+  } else {
+    var nameEl = $('#pageTitle .tt-name');
+    if(nameEl) nameEl.textContent = PAGE_TITLE[name] || '上课管理';
+    var caret2 = $('#pageTitle .caret');
+    if(caret2) caret2.style.display = 'none';
+    if(name === 'students'){
+      $('#btnAction').style.display = '';
+      $('#btnAction').textContent = '＋';
+      renderStudents();
+    } else if(name === 'enroll'){
+      $('#btnAction').style.display = 'none';
+      renderEnroll();
+    } else if(name === 'recycle'){
+      $('#btnAction').style.display = 'none';
+      renderRecycle();
+    } else if(name === 'stats'){
+      $('#btnAction').style.display = 'none';
+      renderStats();
+    } else if(name === 'settings'){
+      $('#btnAction').style.display = 'none';
+      loadAboutLic();
+    }
+  }
+}
+
+$('#btnMenu').addEventListener('click', openDrawer);
+$('#mask').addEventListener('click', closeDrawer);
+
+$$('.dr-item').forEach(function(b){
+  b.addEventListener('click', function(){
+    closeDrawer();
+    setTimeout(function(){ switchPage(b.dataset.page); }, 160);
+  });
+});
+
+$('#pageTitle').addEventListener('click', function(){
+  if(activePage === 'schedule') openTimetablePicker();
+});
+
+$('#btnAction').addEventListener('click', function(){
+  if(activePage === 'students'){ openStudentForm(null); }
+  else if(activePage === 'schedule'){ openStudentForm(null); }
+});
+
+$('#btnPrevWeek').addEventListener('click', function(){
+  currentWeek = addDays(currentWeek, -7);
+  renderSchedule();
+});
+$('#btnNextWeek').addEventListener('click', function(){
+  currentWeek = addDays(currentWeek, 7);
+  renderSchedule();
+});
+$('#btnToday').addEventListener('click', function(){
+  currentWeek = mondayOf(new Date());
+  renderSchedule();
+  toast('已回到今日所在周');
+});
+
+/* =========================================================
+   15. SHA-256（纯 JS，与注册机一致）
+   ========================================================= */
+function sha256(ascii,pad){
+  function rr(v,a){return (v>>>a)|(v<<(32-a));}
+  function ad(x,y){var l=(x&0xFFFF)+(y&0xFFFF);var m=(x>>16)+(y>>16)+(l>>16);return (m<<16)|(l&0xFFFF);}
+  var K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  function getH(s){
+    var i=0,l=s.length,na=Math.floor((l+8)/64)+1,la=na*64,b=new Array(la-1),hb=0x80;
+    for(i=0;i<l;i++){var c=s.charCodeAt(i);hb=(i%4===0)?c:(hb<<8)|c;if(i%4===3){b[(i>>2)]=hb;}}
+    if(i%4===0){b[i>>2]=0x80000000;}else{b[i>>2]=hb<<(8*(3-(i%4)));b[i>>2]|=0x80<<(8*(3-(i%4)));}
+    var bl=l*8;b[la-2]=(bl/0x100000000)|0;b[la-1]=bl;
+    var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+    var w=new Array(64);
+    for(var j=0;j<na;j++){
+      for(i=0;i<16;i++)w[i]=b[j*16+i];
+      for(i=16;i<64;i++){var s0=rr(w[i-15],7)^rr(w[i-15],18)^(w[i-15]>>>3);var s1=rr(w[i-2],17)^rr(w[i-2],19)^(w[i-2]>>>10);w[i]=ad(ad(ad(w[i-16],s0),w[i-7]),s1);}
+      var a=H[0],bc=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+      for(i=0;i<64;i++){
+        var S1=rr(e,6)^rr(e,11)^rr(e,25);var ch=(e&f)^((~e)&g);var t1=ad(ad(ad(h,S1),ch),ad(K[i],w[i]));
+        var S0=rr(a,2)^rr(a,13)^rr(a,22);var maj=(a&bc)^(a&c)^(bc&c);var t2=ad(S0,maj);
+        h=g;g=f;f=e;e=ad(d,t1);d=c;c=bc;bc=a;a=ad(t1,t2);
+      }
+      H[0]=ad(H[0],a);H[1]=ad(H[1],bc);H[2]=ad(H[2],c);H[3]=ad(H[3],d);H[4]=ad(H[4],e);H[5]=ad(H[5],f);H[6]=ad(H[6],g);H[7]=ad(H[7],h);
+    }
+    var o='';for(i=0;i<8;i++){for(var jj=0;jj<4;jj++){var by=(H[i]>>>(8*(3-jj)))&0xff;o+=pad?('0'+by.toString(16)).slice(-2):by.toString(16);}}return o;
+  }
+  return getH(ascii);
+}
+
+/* =========================================================
+   16. 注册系统（上课管理专用盐值，不与文字谱通用）
+   ========================================================= */
+var REG_D1='ClsM9#k2',REG_D2='X7wQ!aZ';
+var REG_SALT_DEVICE=REG_D1+REG_D2;
+var REG_R1='Reg5T$vR',REG_R2='8n@Hsd1c';
+var REG_SALT_REG=REG_R1+REG_R2;
+var REG_S1='Adm4Q#zK',REG_S2='7wL2rN9x';
+var REG_SUPER_SALT=REG_S1+REG_S2;
+var REG_SUPER_HASHES=[
+  '1758739b467715ae94222f69cfd77952763054579e9cd77c63bba6feed9faf',
+  '963de648faf3a8a9e8dfb98996957fe2d1764ebeab5e436660c6239ddb6d83f',
+  'f4ae9653670702dd7fbc2825b9746389cda72d7a21b62a365d5bcf38f88ccb',
+  '56b5b910c248d28e8c43ef93eabd0ca6de5452d0e8cf83b9912573b75bbbed',
+  'a23f2bad459b2fc44aaf6af68e8b2cfd914233d24dc9f9c942769b47accd9',
+  '58190f9e737f3fa5f06fc7ecce80b5d7f12cae67ffe3c857da9db38ee1c7f097',
+  'e91dc86ed82ceff88da93e8d4a82ff61b665361664b4dc1308844cca3e32df'
+];
+var REG_LIC_KEY_BROWSER='mss_lic',REG_LIC_KEY_PLUS='lic:mss';
+
+function regFormatCode(hex){return (hex||'').toUpperCase().replace(/(.{4})/g,'$1-').replace(/-$/,'');}
+function regCleanCode(s){return (s||'').toUpperCase().replace(/[^0-9A-F]/g,'');}
+function regComputeCode(deviceCode){return regFormatCode(sha256(regCleanCode(deviceCode)+'|'+REG_SALT_REG).slice(0,16));}
+function regGetRawDeviceId(){
+  /* 关键：先等 plus 环境就绪再判断，否则 APK 启动瞬间 inPlus()=false，
+     会错误走浏览器分支读 localStorage，导致已激活状态永远读不到 */
+  return plusReady().then(function(){
+    if(inPlus()){
+      /* 设备标识持久化：plus.device.uuid 在部分安卓机上每次启动会变化，
+         导致已激活状态失效。首次读取后存入 plus.storage，之后固定使用。 */
+      var raw='';
+      try{raw=plus.storage.getItem('mss_dev_uuid')||'';}catch(e){}
+      if(!raw){
+        try{raw=plus.device.uuid||'';}catch(e){raw='';}
+        if(!raw){try{raw=plus.device.imei||'';}catch(e){}}
+        raw=String(raw||'').replace(/[\[\]"',\s]/g,'');
+        if(raw.length>64)raw=raw.slice(0,64);
+        if(!raw)raw='plus-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
+        try{plus.storage.setItem('mss_dev_uuid',raw);}catch(e){}
+      }
+      return raw;
+    }
+    var brow='';
+    try{brow=localStorage.getItem('mss_device_uuid')||'';}catch(e){}
+    if(!brow){
+      brow='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){
+        var r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);
+      });
+      try{localStorage.setItem('mss_device_uuid',brow);}catch(e){}
+    }
+    return brow;
+  });
+}
+function regGetDeviceCode(){
+  return regGetRawDeviceId().then(function(raw){
+    if(raw==='NO_DEVICE_ID')throw new Error('NO_DEVICE_ID');
+    return regFormatCode(sha256(raw+'|'+REG_SALT_DEVICE).slice(0,16));
+  });
+}
+function regVerify(input,deviceCode){
+  var inp=String(input||'').trim();
+  if(!inp)return null;
+  /* 超级注册码：同时比对「不补零（与注册机一致）」和「标准补零」两种哈希 */
+  var h1=sha256(REG_SUPER_SALT+inp),h2=sha256(REG_SUPER_SALT+inp,true);
+  if(REG_SUPER_HASHES.indexOf(h1)>=0||REG_SUPER_HASHES.indexOf(h2)>=0)return 'super';
+  var expected=regComputeCode(deviceCode);
+  if(expected&&regCleanCode(inp)===regCleanCode(expected))return 'normal';
+  return null;
+}
+function regReadStore(){
+  if(inPlus()){try{return plus.storage.getItem(REG_LIC_KEY_PLUS)||'';}catch(e){return '';}}
+  try{return localStorage.getItem(REG_LIC_KEY_BROWSER)||'';}catch(e){return '';}
+}
+function regWriteStore(v){
+  if(inPlus()){try{plus.storage.setItem(REG_LIC_KEY_PLUS,v);}catch(e){}}
+  else{try{localStorage.setItem(REG_LIC_KEY_BROWSER,v);}catch(e){}}
+}
+function regClearStore(){
+  if(inPlus()){try{plus.storage.removeItem(REG_LIC_KEY_PLUS);}catch(e){}}
+  else{try{localStorage.removeItem(REG_LIC_KEY_BROWSER);}catch(e){}}
+}
+function regIsLicensed(){
+  return regGetRawDeviceId().then(function(raw){
+    if(raw==='NO_DEVICE_ID')return false;
+    var devCode=regFormatCode(sha256(raw+'|'+REG_SALT_DEVICE).slice(0,16));
+    var devHash=sha256(devCode).slice(0,16);
+    var stored=regReadStore();
+    if(!stored)return false;
+    try{var o=JSON.parse(stored);return o.devHash===devHash;}catch(e){return false;}
+  }).catch(function(){return false;});
+}
+function regSetLicensed(type){
+  return regGetRawDeviceId().then(function(raw){
+    var devCode=regFormatCode(sha256(raw+'|'+REG_SALT_DEVICE).slice(0,16));
+    var devHash=sha256(devCode).slice(0,16);
+    regWriteStore(JSON.stringify({devHash:devHash,type:type,ts:Date.now()}));
+  });
+}
+function regClearLicense(){
+  confirmBox('解除授权','解除后本机将回到未注册状态，需要重新输入注册码激活。是否继续？','解除',function(){
+    regClearStore();
+    $('#regScreen').classList.add('open');
+    toast('已解除授权，请重新激活');
+  });
+}
+function regRefreshDev(){
+  var st=$('#regDevStatus'),code=$('#regDevCode'),retry=$('#regRetryBar'),btn=$('#regRefresh');
+  st.className='reg-st loading';st.textContent='获取中...';
+  code.value='获取中...';
+  retry.classList.remove('show');
+  btn.disabled=true;
+  regGetDeviceCode().then(function(c){
+    code.value=c;
+    st.className='reg-st ok';st.textContent='✓ 已获取';
+    setTimeout(function(){if(($('#regDevStatus').textContent||'').indexOf('已获取')>=0)$('#regDevStatus').textContent='';},2000);
+  }).catch(function(){
+    code.value='获取失败';
+    st.className='reg-st err';st.textContent='获取失败';
+    retry.classList.add('show');
+    $('#regRetryText').textContent='设备码获取失败，请点击重新获取';
+  }).then(function(){btn.disabled=false;});
+}
+function regTryActivate(){
+  var input=$('#regUserCode').value.trim();
+  var msg=$('#regMsg');
+  if(!input){msg.className='reg-msg err';msg.textContent='请输入注册码';return;}
+  regGetDeviceCode().then(function(devCode){
+    var type=regVerify(input,devCode);
+    if(!type){msg.className='reg-msg err';msg.textContent='注册码错误，请核对后重试';return;}
+    regSetLicensed(type).then(function(){
+      msg.className='reg-msg ok';
+      msg.textContent=type==='super'?'✓ 激活成功（超级注册码）':'✓ 激活成功';
+      setTimeout(function(){$('#regScreen').classList.remove('open');},700);
+    });
+  }).catch(function(){
+    msg.className='reg-msg err';msg.textContent='设备码获取失败，请先点击刷新';
+  });
+}
+function regBindEvents(){
+  $('#regRefresh').onclick=regRefreshDev;
+  $('#regRetryBtn').onclick=function(){var b=$('#regRetryBtn');b.disabled=true;b.textContent='获取中...';setTimeout(function(){b.disabled=false;b.textContent='重新获取';regRefreshDev();},200);};
+  $('#regCopy').onclick=function(){
+    var c=$('#regDevCode').value;
+    if(!c||c==='点击 ⟳ 获取'||c==='获取中...'||c==='获取失败'){toast('设备码尚未获取，请先点击 ⟳ 获取');return;}
+    copyText(c).then(function(ok){toast(ok?'已复制设备码':'复制失败，请长按复制');});
+  };
+  $('#regSubmit').onclick=regTryActivate;
+  $('#regUserCode').addEventListener('keydown',function(e){if(e.key==='Enter')regTryActivate();});
+  $('#regTel').onclick=function(){copyText('13810054281').then(function(ok){toast(ok?'已复制手机号':'复制失败');});};
+}
+
+/* =========================================================
+   17. APK 环境 & 返回键
+   ========================================================= */
+function inPlus(){return !!(window.plus&&plus.runtime);}
+function isPlusUA(){return /Html5Plus|HBuilder/i.test(navigator.userAgent||'');}
+function plusReady(){
+  return new Promise(function(res){
+    if(window.plus)return res();
+    var done=false;
+    function ok(){if(!done){done=true;res();}}
+    document.addEventListener('plusready',ok,false);
+    if(isPlusUA()){
+      /* 5+ 运行时：plus 尚未注入，事件+轮询双保险，避免错过 */
+      var t0=Date.now();
+      (function poll(){
+        if(window.plus)return ok();
+        if(Date.now()-t0>6000)return ok();
+        setTimeout(poll,50);
+      })();
+    }else{
+      /* 纯浏览器环境：立即继续 */
+      ok();
+    }
+  });
+}
+function ensureStoragePerm(){
+  if(!inPlus())return Promise.resolve();
+  return new Promise(function(res){
+    try{
+      var main=plus.android.runtimeMainActivity();
+      var Permission=plus.android.importClass('android.Manifest$permission');
+      var ContextCompat=plus.android.importClass('androidx.core.content.ContextCompat');
+      var ActivityCompat=plus.android.importClass('androidx.core.app.ActivityCompat');
+      var granted=ContextCompat.checkSelfPermission(main,Permission.WRITE_EXTERNAL_STORAGE);
+      if(granted===0){res();return;}
+      ActivityCompat.requestPermissions(main,[Permission.WRITE_EXTERNAL_STORAGE,Permission.READ_EXTERNAL_STORAGE],100);
+      setTimeout(res,800);
+    }catch(e){res();}
+  });
+}
+
+(function(){
+  var _lastBack=0;
+  function onBack(){
+    if($('#regScreen')&&$('#regScreen').classList.contains('open'))return;
+    var sheet=document.querySelector('.modal-mask.open');
+    if(sheet){sheet.classList.remove('open');setTimeout(function(){if(sheet.parentNode)sheet.parentNode.removeChild(sheet);},260);return;}
+    if($('#drawer')&&$('#drawer').classList.contains('open')){closeDrawer();return;}
+    if(activePage&&activePage!=='schedule'){switchPage('schedule');return;}
+    var now=Date.now();
+    if(now-_lastBack<2000){try{if(window.plus)plus.runtime.quit();}catch(e){}_lastBack=0;}
+    else{_lastBack=now;toast('再按一次退出应用');}
+  }
+  plusReady().then(function(){
+    try{plus.key.addEventListener('backbutton',onBack,false);}catch(e){}
+  });
+})();
+
+/* =========================================================
+   18. 备份管理（APK 本机 + 公共目录）
+   ========================================================= */
+var BAK_NAME_RE=/^上课管理备份-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/;
+var BAK_IN_APP_KEEP=5;
+var BAK_PREFIX='bak:';
+var BAK_DIR='上课管理备份';
+
+function bakMakeName(){
+  var d=new Date();
+  return '上课管理备份-'+d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+'-'+
+         pad2(d.getHours())+'-'+pad2(d.getMinutes())+'-'+pad2(d.getSeconds())+'.json';
+}
+function bakFmtTime(name){
+  var m=name.match(/(\d{4})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{2})/);
+  if(!m)return name;
+  return m[1]+'/'+m[2]+'/'+m[3]+' '+m[4]+':'+m[5];
+}
+function bakListInApp(){
+  if(inPlus()){
+    var names=[];
+    try{
+      var len=plus.storage.getLength();
+      for(var i=0;i<len;i++){
+        var k=plus.storage.key(i);
+        if(k&&k.indexOf(BAK_PREFIX)===0)names.push(k.slice(BAK_PREFIX.length));
+      }
+    }catch(e){}
+    return names.sort().reverse();
+  }else{
+    try{
+      var arr=JSON.parse(localStorage.getItem('mss_baks')||'[]');
+      return arr.map(function(b){return b.name;}).sort().reverse();
+    }catch(e){return [];}
+  }
+}
+function bakReadInApp(name){
+  if(inPlus()){
+    try{return plus.storage.getItem(BAK_PREFIX+name)||'';}catch(e){return '';}
+  }else{
+    try{
+      var arr=JSON.parse(localStorage.getItem('mss_baks')||'[]');
+      var b=arr.find(function(x){return x.name===name;});
+      return b?b.text:'';
+    }catch(e){return '';}
+  }
+}
+function bakStoreInApp(name,text){
+  if(inPlus()){
+    try{plus.storage.setItem(BAK_PREFIX+name,text);return true;}catch(e){return false;}
+  }else{
+    try{
+      var arr=JSON.parse(localStorage.getItem('mss_baks')||'[]');
+      arr.push({name:name,text:text});
+      arr=arr.sort(function(a,b){return a.name<b.name?1:-1;}).slice(0,BAK_IN_APP_KEEP);
+      localStorage.setItem('mss_baks',JSON.stringify(arr));
+      return true;
+    }catch(e){return false;}
+  }
+}
+function bakDeleteInApp(name){
+  if(inPlus()){try{plus.storage.removeItem(BAK_PREFIX+name);}catch(e){}}
+  else{
+    try{
+      var arr=JSON.parse(localStorage.getItem('mss_baks')||'[]').filter(function(b){return b.name!==name;});
+      localStorage.setItem('mss_baks',JSON.stringify(arr));
+    }catch(e){}
+  }
+}
+function bakPruneInApp(){
+  var names=bakListInApp();
+  if(names.length<=BAK_IN_APP_KEEP)return;
+  var toDel=names.slice(BAK_IN_APP_KEEP);
+  toDel.forEach(bakDeleteInApp);
+}
+function bakRenameInApp(oldName,newName){
+  if(oldName===newName)return true;
+  if(bakListInApp().indexOf(newName)>=0){toast('已存在同名备份');return false;}
+  var text=bakReadInApp(oldName);
+  if(!text){toast('原备份不存在');return false;}
+  if(inPlus()){
+    try{plus.storage.setItem(BAK_PREFIX+newName,text);plus.storage.removeItem(BAK_PREFIX+oldName);return true;}
+    catch(e){toast('改名失败');return false;}
+  }else{
+    try{
+      var arr=JSON.parse(localStorage.getItem('mss_baks')||'[]');
+      var b=arr.find(function(x){return x.name===oldName;});
+      if(!b){toast('原备份不存在');return false;}
+      b.name=newName;
+      localStorage.setItem('mss_baks',JSON.stringify(arr));
+      return true;
+    }catch(e){toast('改名失败');return false;}
+  }
+}
+/* 保存结果弹窗：显示确切位置。
+   注意：plus.share.sendWithSystem 不支持分享文件（官方仅支持文本/图片），
+   之前用它分享会把"路径字符串"当文本发出去（被接收方存成 txt）——已移除。
+   沙盒兜底时展示 Download 写入失败的具体原因，便于定位。 */
+function bakShowResult(r,name){
+  var loc,note='';
+  if(r.where==='download'){
+    loc='内部存储 / Download / 上课管理备份 /<br><b style="word-break:break-all">'+esc(name)+'</b>';
+  }else{
+    loc='应用私有目录（软件内「恢复数据」可直接选用）<br><b style="word-break:break-all">'+esc(name)+'</b>';
+    note='<div style="margin-top:8px;color:#b45f06;font-size:12px;line-height:1.6">⚠ 系统下载目录写入失败'+(r.reason?'：'+esc(r.reason):'')+'</div>';
+  }
+  showSheet(
+    '<div class="sheet">'+
+      '<div class="sheet-title">备份已保存</div>'+
+      '<div class="sheet-sub" style="text-align:left;line-height:1.8">备份文件已保存到：'+
+        '<div style="margin:8px 0;padding:10px 12px;border-radius:9px;background:#f5f2ec;border:1px solid #e5e0d8;font-size:12.5px;line-height:1.7">'+loc+'</div>'+
+        note+
+        '<div style="margin-top:8px;color:#8a8378;font-size:11.5px">换手机恢复：新手机安装本软件后，用「设置 → 恢复数据」选择备份即可。</div>'+
+      '</div>'+
+      '<button class="wide-btn" data-act="close">完成</button>'+
+    '</div>',
+    function(a){ a.close(); }
+  );
+}
+function bakExportOne(name){
+  var text=bakReadInApp(name);
+  if(!text){toast('备份不存在');return;}
+  if(inPlus()){
+    toast('正在写入手机文件…');
+    bakSaveToPhone(name,text).then(function(r){
+      bakShowResult(r,name);
+    }).catch(function(e){
+      toast('写入手机失败：'+String((e&&e.message)||e).slice(0,60));
+    });
+  }else{
+    try{
+      var blob=new Blob([text],{type:'application/json'});
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a');
+      a.href=url;a.download=name;a.style.display='none';
+      document.body.appendChild(a);a.click();
+      setTimeout(function(){URL.revokeObjectURL(url);a.remove();},300);
+      toast('已下载备份文件');
+    }catch(e){toast('导出失败');}
+  }
+}
+
+/* ===== APK 保存到手机（移植自文字谱软件验证方案）=====
+   Android 10+(API29) 走 MediaStore 写入系统 Download（分区存储正道，免存储权限，
+   旧 FileOutputStream 直写公共目录在 Android10+ 必然被拒）；
+   Android 9 及以下直写公共 Download（已申请权限）；都失败退到应用沙盒 _doc。
+   plus 桥接要点：单次桥接传大字符串会静默失败（大备份写不出的根因），
+   所以 JS 侧先转 Base64，按 ~28K 字符分块，每块在 Java 层 decode 成 byte[] 立即 write。 */
+function utf8ToBase64(str){
+  var u8=(window.TextEncoder?new TextEncoder():null),bytes;
+  if(u8)bytes=u8.encode(str);
+  else{
+    var raw=unescape(encodeURIComponent(str));
+    bytes=new Uint8Array(raw.length);
+    for(var i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+  }
+  var bin='';var CH=0x4000;
+  for(var j=0;j<bytes.length;j+=CH)bin+=String.fromCharCode.apply(null,bytes.subarray(j,j+CH));
+  return btoa(bin);
+}
+function utf8ByteLength(text){
+  if(window.TextEncoder)return new TextEncoder().encode(text).length;
+  return unescape(encodeURIComponent(text)).length;
+}
+/* 宽松写后校验（文字谱验证版）：只在「明确读到文件大小且确实不对」时报失败。
+   MediaStore 在 close 后短暂处于 IS_PENDING，此刻 getStatSize 可能返回 0/-1，
+   这是时序问题而非损坏——所以读两次（间隔 300ms）：
+   任一次等于预期、或读不到/为负，都信任写入；只有两次都为 0、或两次都是
+   明确的非零但错误大小，才判失败。绝不因读不到而删除好文件。 */
+async function plusCheckSizeSafe(resolver,uri,expectBytes){
+  function readOnce(){
+    try{
+      var pfd=resolver.openFileDescriptor(uri,'r');plus.android.importClass(pfd);
+      var s=pfd.getStatSize();try{pfd.close();}catch(e){}
+      return typeof s==='number'?s:null;
+    }catch(e){return null;}
+  }
+  var s1=readOnce();
+  if(s1===expectBytes)return true;
+  await new Promise(function(r){setTimeout(r,300);});
+  var s2=readOnce();
+  if(s2===expectBytes)return true;
+  if(s1===null||s2===null||s1<0||s2<0)return true; /* 读不到大小：信任 */
+  if(s1===0&&s2===0)return false; /* 两次都确认为 0 字节：真失败 */
+  if(s1>0&&s2>0&&s1===s2&&s1!==expectBytes)return false; /* 大小稳定但错误：截断/拼接 */
+  return true; /* 大小还在变化（媒体提供方收尾中），信任 */
+}
+function plusYield(){return new Promise(function(r){setTimeout(r,0);});}
+/* 通过输出流写入文本：分块 Base64，全程无大参数桥接（文字谱验证版逐字移植）。
+   - 每段 Base64 28000 字符（4 的倍数），始终压在 plus 桥接单参 ~32KB 安全线以内；
+   - 块与块之间 yield 一次；
+   - 中途任何一块失败：绝不允许在同一流上重写，直接抛错交给上层删除半成品并换路径；
+   - 仅当一块都没写成功时，才启用 OutputStreamWriter 兜底（此时流还是空的，安全） */
+async function plusWriteTextToStream(stream,text,b64){
+  plus.android.importClass(stream);
+  var written=0;
+  var SEG=28000; /* 必须是 4 的倍数，每段可独立 Base64 解码；切勿调大——超桥接单参上限必失败 */
+  try{
+    var Base64=plus.android.importClass('android.util.Base64');
+    for(var i=0;i<b64.length;i+=SEG){
+      var seg=b64.substring(i,Math.min(i+SEG,b64.length));
+      var chunk;
+      try{chunk=Base64.decode(seg,0);}
+      catch(eFlag){
+        if(written>0)throw new Error('数据分块解码失败');
+        chunk=Base64.decode(seg,2); /* 2=NO_PADDING，仅第一块时尝试 */
+      }
+      stream.write(chunk); /* write(byte[])：byte[] 始终是 Java 对象，不经 JS 解包 */
+      written+=seg.length;
+      await plusYield();
+    }
+    stream.flush();
+    return;
+  }catch(eMain){
+    if(written>0)throw new Error('备份写入中途失败（已写入部分数据），已中止以防文件损坏');
+  }
+  /* 一块都没写成功时的兜底：OutputStreamWriter 按小块直写（此时流为空，重写安全）。
+     8000 字符/次：即使全是中文（UTF-8 3 字节/字）也只有 24KB，压在桥接 32KB 线下。
+     块尾回退：不可把代理对（emoji/生僻字，占 2 个 JS 字符）拆到两块，否则孤立
+     代理项会被编码成 U+FFFD 替换符，导致 JSON 损坏 */
+  var OSW=plus.android.importClass('java.io.OutputStreamWriter');
+  var w=new OSW(stream,'UTF-8');plus.android.importClass(w);
+  var CH=8000;
+  for(var j=0;j<text.length;){
+    var end=Math.min(j+CH,text.length);
+    if(end<text.length){
+      var c=text.charCodeAt(end-1);
+      if(c>=0xD800&&c<=0xDBFF)end--; /* 高代理在块尾：整对让到下一块 */
+    }
+    if(end<=j)end=j+1; /* 防御：绝不出空块 */
+    w.write(text.substring(j,end));j=end;await plusYield();
+  }
+  w.flush();w.close();
+}
+/* plus.io FileWriter 分块追加写沙盒文件（每块 8000 字符，串行等待 onwrite。
+   不能用 64K：单次桥接载荷超 ~32KB 上限会直接失败，导致最终兜底也失效） */
+function plusWriteDocChunked(name,text){
+  return new Promise(function(resolve,reject){
+    plus.io.resolveLocalFileSystemURL('_doc/',function(dir){
+      /* 先删同名旧文件再重建，代替 truncate（HTML5+ truncate 完成不触发 onwrite） */
+      function startWrite(){
+        dir.getFile(name,{create:true,exclusive:false},function(fe){
+          fe.createWriter(function(w){
+          w.onerror=function(e){reject(e);};
+          var CH=8000,pos=0;
+          (function writeNext(){
+            if(pos>=text.length){resolve('_doc/'+name);return;}
+            try{
+              var end=Math.min(pos+CH,text.length);
+              if(end<text.length){
+                var c=text.charCodeAt(end-1);
+                if(c>=0xD800&&c<=0xDBFF)end--; /* 高代理在块尾：整对让到下一块，防止 JSON 损坏 */
+              }
+              if(end<=pos)end=pos+1;
+              w.onwrite=function(){pos=end;writeNext();};
+              w.seek(pos);
+              w.write(text.substring(pos,end)); /* HTML5+ write 只支持字符串 */
+            }catch(e){reject(e);}
+          })();
+        },reject);
+        },reject);
+      }
+      dir.getFile(name,{create:false},function(old){old.remove(startWrite,startWrite);},startWrite);
+    },reject);
+  });
+}
+/* ===== APK 保存到手机（与文字谱软件 saveTextAPK 完全一致的验证方案）=====
+   三条路径：Android 10+ MediaStore.Downloads（免存储权限，分区存储正道）；
+   Android 9- 直写公共下载目录（需权限）；最后兜底应用沙盒 _doc。 */
+async function bakSaveToPhone(name,text){
+  await plusReady();
+  var b64=utf8ToBase64(text);
+  var expectBytes=utf8ByteLength(text);
+  var errors=[];
+  var V=null;
+  try{V=plus.android.importClass('android.os.Build$VERSION');}catch(e){}
+  var isSdk29=!!(V&&V.SDK_INT>=29);
+  if(isSdk29){
+    /* Android 10+：MediaStore.Downloads（分区存储下唯一正道，免存储权限） */
+    var uri=null,resolver=null;
+    try{
+      var main=plus.android.runtimeMainActivity();
+      resolver=main.getContentResolver();plus.android.importClass(resolver);
+      var ContentValues=plus.android.importClass('android.content.ContentValues');
+      var MediaStore=plus.android.importClass('android.provider.MediaStore');
+      /* 与已验证成功的文字谱 saveTextAPK 逐字一致（勿改动取嵌套类的方式） */
+      var vals=new ContentValues();
+      vals.put(MediaStore.MediaColumns.DISPLAY_NAME,name);
+      vals.put(MediaStore.MediaColumns.MIME_TYPE,'application/json');
+      try{vals.put(MediaStore.MediaColumns.RELATIVE_PATH,'Download/'+BAK_DIR);}catch(e){}
+      uri=resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI,vals);
+      if(!uri)throw new Error('创建下载文件失败（MediaStore 返回空）');
+      var outs=resolver.openOutputStream(uri);
+      if(!outs)throw new Error('打开输出流失败');
+      try{
+        await plusWriteTextToStream(outs,text,b64);
+      }finally{try{outs.close();}catch(e){}}
+      /* 宽松校验：写流全程没抛错即基本可信；大小校验只抓「确证的」0 字节/截断 */
+      var ok=await plusCheckSizeSafe(resolver,uri,expectBytes);
+      if(!ok){
+        try{resolver.delete(uri,null,null);}catch(e){}
+        throw new Error('写入后文件大小校验为 0 字节或被截断');
+      }
+      return {where:'download',path:'/storage/emulated/0/Download/'+BAK_DIR+'/'+name};
+    }catch(e){
+      errors.push('Download目录：'+((e&&e.message)||e));
+      try{if(uri&&resolver)resolver.delete(uri,null,null);}catch(e2){}
+      /* Android 10+ 不再尝试 FileOutputStream 直写公共目录（分区存储必然失败），直接走沙盒 */
+    }
+  }else{
+    /* Android 9 及以下：直接写公共下载目录（需要 WRITE_EXTERNAL_STORAGE） */
+    var fos=null,f=null;
+    try{
+      await ensureStoragePerm();
+      var Environment=plus.android.importClass('android.os.Environment');
+      var File=plus.android.importClass('java.io.File');
+      var FOS=plus.android.importClass('java.io.FileOutputStream');
+      var dir=Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+      dir.mkdirs();
+      f=new File(dir,name);
+      fos=new FOS(f);
+      await plusWriteTextToStream(fos,text,b64);
+      try{fos.close();}catch(e){}
+      var len=-1;try{len=f.length();}catch(e){}
+      if(len>=0&&len!==expectBytes){try{f['delete']();}catch(e){}throw new Error('写入大小不符（'+len+'/'+expectBytes+'）');}
+      return {where:'download',path:f.getAbsolutePath()};
+    }catch(e){
+      errors.push('公共下载目录：'+((e&&e.message)||e));
+      try{if(fos)fos.close();}catch(e2){}
+    }
+  }
+  /* 最后兜底：应用沙盒 _doc，plus.io FileWriter 官方异步 API 分块写。
+     加 8 秒超时：个别机型 plus.io 回调不触发会永久挂起，超时即报错走人 */
+  try{
+    var rel=await Promise.race([
+      plusWriteDocChunked(name,text),
+      new Promise(function(_,rej){setTimeout(function(){rej(new Error('写入超时（8 秒无响应）'));},8000);})
+    ]);
+    return {where:'doc',path:plus.io.convertLocalFileSystemURL(rel),reason:errors.join('；')};
+  }catch(e){
+    errors.push('应用私有目录：'+((e&&e.message)||e));
+  }
+  throw new Error(errors.join('；')||'未知错误');
+}
+
+function bakNormalize(d){
+  if(!d||typeof d!=='object')return null;
+  if(d.version!==undefined&&d.db)d=d.db;
+  if(!Array.isArray(d.timetables)||!Array.isArray(d.students)||!Array.isArray(d.lessons))return null;
+  return d;
+}
+function bakParse(raw){
+  var s=String(raw||'');
+  if(s.charCodeAt(0)===0xFEFF)s=s.slice(1);
+  try{return bakNormalize(JSON.parse(s));}catch(e){}
+  return null;
+}
+
+function doBackup(){
+  var name=bakMakeName();
+  var text=JSON.stringify(DB,null,2);
+  var ok=bakStoreInApp(name,text);
+  if(!ok){toast('备份失败：存储空间不足');return;}
+  bakPruneInApp();
+  toast('备份已保存到软件内（保留最近 '+BAK_IN_APP_KEEP+' 份）');
+}
+
+function openBackupManager(){
+  var names=bakListInApp();
+  var html='<div class="sheet"><div class="sheet-title">备份管理</div>'+
+    '<div class="sheet-sub">本机共 '+names.length+' 份备份</div>';
+  if(!names.length){
+    html+='<div class="empty" style="padding:30px 10px;">暂无备份，点击下方按钮新建</div>';
+  }else{
+    html+='<div style="max-height:50vh;overflow-y:auto;margin-bottom:10px;">';
+    names.forEach(function(n){
+      var text=bakReadInApp(n);
+      var size=Math.round((new Blob([text]).size)/1024);
+      html+='<div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #f3f4f8;">'+
+        '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;word-break:break-all;">'+esc(n)+'</div>'+
+        '<div style="font-size:11px;color:#9ca3af;margin-top:2px;">'+bakFmtTime(n)+' · '+size+' KB</div></div>'+
+        '<button class="bak-ico" data-bakact="rename" data-bakname="'+esc(n)+'" title="改名">✏️</button>'+
+        '<button class="bak-ico" data-bakact="export" data-bakname="'+esc(n)+'" title="保存到手机">📱</button>'+
+        '<button class="bak-ico" data-bakact="del" data-bakname="'+esc(n)+'" title="删除" style="font-size:13px;">🗑️</button></div>';
+    });
+    html+='</div>';
+  }
+  html+='<button class="wide-btn primary" data-bakact="new">＋ 新建备份</button>'+
+    '<button class="wide-btn ghost" data-bakact="close">关闭</button></div>';
+  var ref=showSheet(html);
+  function doRename(n){
+    ref.close();
+    setTimeout(function(){openBakRename(n);},250);
+  }
+  ref.el.addEventListener('click',function(e){
+    var btn=e.target.closest('[data-bakact]');
+    if(!btn)return;
+    var act=btn.dataset.bakact;
+    if(act==='new'){doBackup();ref.close();setTimeout(openBackupManager,300);}
+    else if(act==='close'){ref.close();}
+    else if(act==='rename'){doRename(btn.dataset.bakname);}
+    else if(act==='export'){bakExportOne(btn.dataset.bakname);}
+    else if(act==='del'){
+      var dn=btn.dataset.bakname;
+      confirmBox('删除备份','确定删除备份「'+esc(dn)+'」吗？','删除',function(){
+        bakDeleteInApp(dn);ref.close();setTimeout(openBackupManager,200);
+      });
+    }
+  });
+}
+
+function openBakRename(oldName){
+  var html='<div class="sheet"><div class="sheet-title">备份改名</div>'+
+    '<div class="sheet-sub">'+esc(oldName)+'</div>'+
+    '<div class="form-row"><label>新名称</label>'+
+      '<input type="text" id="bakRenameInput" value="'+esc(oldName.replace(/\.json$/,''))+'" maxlength="60"/></div>'+
+    '<button class="wide-btn primary" data-bakact="ok">保存</button>'+
+    '<button class="wide-btn ghost" data-bakact="close">取消</button></div>';
+  var ref=showSheet(html);
+  function submit(){
+    var inp=document.getElementById('bakRenameInput');
+    var v=(inp&&inp.value||'').trim();
+    if(!v){toast('请输入新名称');return;}
+    if(!/\.json$/i.test(v))v+='.json';
+    if(bakRenameInApp(oldName,v)){
+      toast('已改名');
+      ref.close();
+      setTimeout(openBackupManager,250);
+    }
+  }
+  ref.el.addEventListener('click',function(e){
+    var btn=e.target.closest('[data-bakact]');
+    if(!btn)return;
+    if(btn.dataset.bakact==='ok')submit();
+    else if(btn.dataset.bakact==='close')ref.close();
+  });
+  ref.el.addEventListener('keydown',function(e){
+    if(e.target&&e.target.id==='bakRenameInput'&&e.key==='Enter'){e.preventDefault();submit();}
+  });
+  setTimeout(function(){
+    var i=ref.el.querySelector('#bakRenameInput');
+    if(i){i.focus();i.select();}
+  },200);
+}
+
+function openRestoreChooser(){
+  var names=bakListInApp();
+  var html='<div class="sheet"><div class="sheet-title">恢复数据</div>'+
+    '<div class="sheet-sub">从本机备份或外部文件恢复</div>';
+  if(names.length){
+    html+='<div style="max-height:40vh;overflow-y:auto;margin-bottom:10px;">';
+    names.forEach(function(n){
+      html+='<button class="tt-opt" data-rest="'+esc(n)+'">'+
+        '<span>'+esc(n)+' <span class="tt-sub">'+bakFmtTime(n)+'</span></span></button>';
+    });
+    html+='</div>';
+  }
+  html+='<button class="wide-btn ghost" id="btnRestoreFile">从文件恢复（JSON）</button>'+
+    '<button class="wide-btn" data-bakact="close">关闭</button></div>';
+  var ref=showSheet(html);
+  ref.el.addEventListener('click',function(e){
+    var r=e.target.closest('[data-rest]');
+    if(r){
+      var n=r.dataset.rest;
+      var text=bakReadInApp(n);
+      var data=bakParse(text);
+      if(!data){toast('备份文件已损坏');return;}
+      ref.close();
+      confirmBox('恢复备份','将用备份「'+esc(n)+'」覆盖当前全部数据，确定继续吗？','确定恢复',function(){
+        DB=migrate(data);
+        currentTtId=(DB.timetables.find(function(t){return t.isDefault;})||DB.timetables[0]).id;
+        statsTtId=currentTtId;
+        save();renderSchedule();renderStudents();renderStats();
+        toast('恢复成功');
+      });
+      return;
+    }
+    var c=e.target.closest('[data-bakact]');
+    if(c&&c.dataset.bakact==='close'){ref.close();}
+  });
+  setTimeout(function(){
+    var btn=ref.el.querySelector('#btnRestoreFile');
+    if(btn)btn.onclick=function(){
+      var inp=document.createElement('input');
+      inp.type='file';inp.accept='.json,application/json';inp.style.display='none';
+      document.body.appendChild(inp);
+      inp.onchange=function(e){
+        var f=e.target.files&&e.target.files[0];
+        if(!f)return;
+        var r=new FileReader();
+        r.onload=function(ev){
+          var data=bakParse(ev.target.result);
+          if(!data){toast('文件格式错误');return;}
+          ref.close();
+          confirmBox('恢复备份','将用该文件覆盖当前全部数据，确定继续吗？','确定恢复',function(){
+            DB=migrate(data);
+            currentTtId=(DB.timetables.find(function(t){return t.isDefault;})||DB.timetables[0]).id;
+            statsTtId=currentTtId;
+            save();renderSchedule();renderStudents();renderStats();
+            toast('恢复成功');
+          });
+        };
+        r.readAsText(f);
+        inp.value='';
+      };
+      inp.click();
+    };
+  },50);
+}
+
+function init(){
+  loadDB();
+
+  if(!DB.timetables.length) DB.timetables = defaultData().timetables;
+  currentTtId = (DB.timetables.find(t => t.isDefault) || DB.timetables[0]).id;
+  statsTtId = currentTtId;
+  currentWeek = mondayOf(new Date());
+
+  renderSchedule();
+  renderStudents();
+  renderStats();
+  switchPage('schedule');
+
+  let lastTouch = 0;
+  document.addEventListener('touchend', function(e){
+    const now = Date.now();
+    if(now - lastTouch < 300) e.preventDefault();
+    lastTouch = now;
+  }, { passive: false });
+
+  let rzTimer = null;
+  window.addEventListener('resize', function(){
+    clearTimeout(rzTimer);
+    rzTimer = setTimeout(function(){
+      if(activePage === 'schedule') renderSchedule();
+    }, 200);
+  });
+
+  setTimeout(function(){
+    if(activePage === 'schedule') renderSchedule();
+  }, 60);
+}
+
+function boot(){
+  init();
+  regBindEvents();
+  regIsLicensed().then(function(ok){
+    if(!ok){
+      $('#regScreen').classList.add('open');
+      /* 不自动获取设备码，由用户点击 ⟳ 按钮手动获取 */
+    }
+  });
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', boot);
+} else {
+  boot();
+}
+</script>
+</body>
+</html>
